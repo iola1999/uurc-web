@@ -60,9 +60,35 @@ describe("WorkerSignalSocket", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
+
+  it("closes a half-open connection after the advertised heartbeat deadline", async () => {
+    const harness = await connectHarness();
+    vi.useFakeTimers();
+    harness.socket.dispatchMessage('0{"sid":"engine-1","pingInterval":1000,"pingTimeout":1000}');
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(1500);
+    harness.socket.dispatchMessage("2");
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(harness.client.connected).toBe(true);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(harness.client.connected).toBe(false);
+    expect(harness.onClose).toHaveBeenCalledWith("signal heartbeat timed out");
+  });
+
+  it.each(["45" + '11-["synthetic"]', '42["synthetic","' + "x".repeat(1024 * 1024) + '"]'])(
+    "rejects excessive attachments or oversized frames",
+    async (frame) => {
+      const harness = await connectHarness();
+      harness.socket.dispatchMessage(frame);
+      await vi.waitFor(() => expect(harness.onError).toHaveBeenCalledOnce());
+      expect(harness.client.connected).toBe(false);
+    },
+  );
 
   it.each([
     ["Socket.IO", "41"],

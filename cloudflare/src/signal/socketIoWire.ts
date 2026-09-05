@@ -1,3 +1,5 @@
+import { validateSignalServer } from "@uurc/shared/signalGateway/authorization";
+
 export const SOCKET_IO_NAMESPACE = "/";
 export const ENGINE_IO_OPEN = "0";
 export const ENGINE_IO_CLOSE = "1";
@@ -16,8 +18,7 @@ export interface SocketIoPacket {
 }
 
 export function buildEngineIoWebSocketUrl(signalServer: string): string {
-  const url = new URL(signalServer);
-  if (url.protocol === "ws:") url.protocol = "http:";
+  const url = validateSignalServer(signalServer);
   if (url.protocol === "wss:") url.protocol = "https:";
   if (!url.pathname || url.pathname === "/") url.pathname = "/socket.io/";
   else if (!url.pathname.endsWith("/")) url.pathname = `${url.pathname}/`;
@@ -26,13 +27,20 @@ export function buildEngineIoWebSocketUrl(signalServer: string): string {
   return url.toString();
 }
 
-export function parseEngineOpenPacket(value: string): { sid?: string } {
-  try {
-    const parsed = JSON.parse(value);
-    return isRecord(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
+export function parseEngineOpenPacket(value: string): { sid?: string; pingInterval: number; pingTimeout: number } {
+  const parsed: unknown = JSON.parse(value);
+  if (!isRecord(parsed)) throw new Error("Invalid Engine.IO open packet");
+  const duration = (value: unknown, fallback: number) => {
+    if (value === undefined) return fallback;
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 || value > 300_000)
+      throw new Error("Invalid Engine.IO heartbeat duration");
+    return value;
+  };
+  return {
+    sid: typeof parsed.sid === "string" ? parsed.sid : undefined,
+    pingInterval: duration(parsed.pingInterval, 25_000),
+    pingTimeout: duration(parsed.pingTimeout, 20_000),
+  };
 }
 
 export function parseSocketIoPacket(value: string): SocketIoPacket {
@@ -45,7 +53,9 @@ export function parseSocketIoPacket(value: string): SocketIoPacket {
     const start = offset;
     while (isDigit(value[offset])) offset += 1;
     attachments = Number.parseInt(value.slice(start, offset), 10);
-    if (value[offset] === "-") offset += 1;
+    if (!Number.isInteger(attachments) || attachments < 0 || attachments > 10 || value[offset] !== "-")
+      throw new Error("Invalid binary attachment count");
+    offset += 1;
   }
 
   let namespace = SOCKET_IO_NAMESPACE;

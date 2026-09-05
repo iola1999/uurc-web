@@ -46,6 +46,18 @@ See the [Cloudflare deployment guide](cloudflare/README.md) for requirements, tr
 
 ### Docker
 
+Use `http://localhost:8787` on the Docker host. Access from another computer or phone requires HTTPS with a trusted certificate: browser request signing and clipboard access depend on a secure context. A LAN IP or plain HTTP domain will fail these checks.
+
+For example, run [Caddy](https://caddyserver.com/docs/automatic-https) on the same host, point a domain at it, and allow ports 80/443:
+
+```caddyfile
+remote.example.com {
+  reverse_proxy 127.0.0.1:8787
+}
+```
+
+Configure access authentication separately before exposing the service publicly.
+
 ```bash
 docker run -d \
   --name uurc-web \
@@ -60,7 +72,7 @@ curl -O https://raw.githubusercontent.com/iola1999/uurc-web/main/compose.yml
 docker compose up -d
 ```
 
-The signal API gives each browser tab an opaque session capability that isolates in-process signal connections. Public deployments still need Cloudflare Access, an authenticated reverse proxy, or another access gateway.
+Each page instance gets an independent signal capability. Refreshing creates a new session; partner assistance returns to verification with the device ID filled in. Gateways authorize only the token and targets returned by a successful UU room join for that session. Browser inactivity for two minutes closes the signal connection and removes temporary authorization and events. Public deployments still need Cloudflare Access, an authenticated reverse proxy, or another access gateway.
 
 Wisp is disabled by default because the frontend currently uses the local proxy transport. Set `ENABLE_WISP=true` only when testing the optional WASM curl transport.
 
@@ -69,6 +81,8 @@ Wisp is disabled by default because the frontend currently uses the local proxy 
 Login state is stored in the current browser, while UU API requests pass through the deployment in use. A shared-instance operator can technically observe the requests it proxies. Prefer self-hosting, and remove SMS codes, credentials, tokens, device IDs, room data, and network addresses from public logs and screenshots.
 
 Read [SECURITY.md](SECURITY.md) for the full trust model and private reporting process.
+
+The remote toolbar includes a text input dialog for mobile keyboards and local IME composition. Text is sent when you select Send, preserving spaces and line breaks.
 
 ## Development
 
@@ -88,6 +102,8 @@ docker build -t iola1999/uurc-web:local .
 - [Contributing guide](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md)
+- [Project audit, 2026-09-05 (Chinese)](docs/project-audit-2026-09-05.zh-CN.md)
+- [Audit fixes and validation (Chinese)](implementation-notes.md)
 
 ## Acknowledgements
 

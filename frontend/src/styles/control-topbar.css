@@ -1,4 +1,13 @@
 /* 顶栏图标按钮（返回、会话面板开关）：深色描边。 */
+.control-topbar .status-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.control-topbar-title {
+  min-width: 0;
+}
+
 .icon-button-dark {
   border-color: var(--dark-border);
   background: transparent;

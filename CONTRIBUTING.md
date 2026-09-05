@@ -40,12 +40,15 @@ Run the checks that cover your change. Before opening a pull request, the full s
 npm run format:check
 npm run lint
 npm run typecheck -w frontend
+npm run typecheck:cloudflare
 npm test
 npm run build
 npm run check:cloudflare
 ```
 
 Changes to the Node gateway should include backend tests. Changes to Worker signaling should include Cloudflare tests. Browser session behavior belongs in the focused frontend test files instead of a single large integration test.
+
+`npm test` includes the Worker runtime suite under `cloudflare/tests/runtime/`. It exercises HTTP routing, SQLite storage, alarms, object reconstruction, and concurrent lifecycle operations locally with synthetic data.
 
 ## Commit messages
 

@@ -31,21 +31,39 @@ export function useRemoteRecoveryController(options: RemoteRecoveryOptions) {
   const decodeStalledPersisted =
     (flowStatus === "decode_stalled" || flowStatus === "presentation_stalled") && decodeStalledStreak >= 2;
   const canRecover =
-    options.browserRemoteState.stage === "connected" &&
-    (options.controlChannelState === "closed" || flowStatus === "transport_stalled" || decodeStalledPersisted);
+    Boolean(options.browserRemoteState.failureReason) ||
+    (attemptCount > 0 && options.browserRemoteState.stage === "idle") ||
+    (options.browserRemoteState.stage === "connected" &&
+      (!options.signalGatewayMatchesRoom ||
+        options.controlChannelState === "closed" ||
+        flowStatus === "transport_stalled" ||
+        decodeStalledPersisted));
 
+  const healthy =
+    options.browserRemoteState.stage === "connected" &&
+    options.controlChannelState === "open" &&
+    options.signalGatewayMatchesRoom &&
+    flowStatus === "receiving";
   useEffect(() => {
-    if (!canRecover) {
+    if (!options.roomJoinedForSelectedDevice) {
       setAttemptCount(0);
       setStatus("");
       return;
     }
-    if (
-      !options.autoReconnectEnabled ||
-      options.busy !== null ||
-      !options.roomJoinedForSelectedDevice ||
-      !options.signalGatewayMatchesRoom
-    ) {
+    if (!healthy) return;
+    const timer = window.setTimeout(() => {
+      setAttemptCount(0);
+      setStatus("");
+    }, 10_000);
+    return () => window.clearTimeout(timer);
+  }, [healthy, options.roomJoinedForSelectedDevice]);
+
+  useEffect(() => {
+    if (!canRecover) {
+      setStatus("");
+      return;
+    }
+    if (!options.autoReconnectEnabled || options.busy !== null || !options.roomJoinedForSelectedDevice) {
       return;
     }
 
@@ -53,7 +71,7 @@ export function useRemoteRecoveryController(options: RemoteRecoveryOptions) {
     setStatus(`自动重连将在 ${Math.ceil(delayMs / 1000)} 秒后尝试`);
     const timer = window.setTimeout(() => {
       setAttemptCount((count) => count + 1);
-      void onReconnectRef.current(attemptCount);
+      void onReconnectRef.current(attemptCount).catch(() => setStatus("重连失败，稍后重试"));
     }, delayMs);
 
     return () => window.clearTimeout(timer);

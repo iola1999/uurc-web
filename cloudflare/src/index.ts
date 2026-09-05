@@ -3,6 +3,7 @@ import type { RemoteSignalSession as RemoteSignalSessionClass } from "./signalSe
 import { createRuntimeProfile } from "@uurc/shared/runtimeProfile";
 import { FRONTEND_APP_SHELL_PATH, isFrontendAppRoute } from "@uurc/shared/frontendRoutes";
 import { REMOTE_SESSION_HEADER, isRemoteSessionId } from "@uurc/shared/remoteSession";
+import { authorizeUuRoom } from "@uurc/shared/signalGateway/authorization";
 import {
   ValidationError,
   parseOptionalEventId,
@@ -10,7 +11,12 @@ import {
   parseSignalGatewayStartRequest,
   parseSignalSoacRequest,
 } from "@uurc/shared/signalGateway/requests";
-import { assertAllowedUuApiPath, parseMaybeJsonBody, sanitizeUuProxyHeaders } from "@uurc/shared/uuProxy";
+import {
+  assertAllowedUuApiPath,
+  parseMaybeJsonBody,
+  sanitizeUuProxyHeaders,
+  readBoundedText,
+} from "@uurc/shared/uuProxy";
 
 const API_BASE = "https://api.nrd.nie.163.com";
 const UU_PROXY_TIMEOUT_MS = 30_000;
@@ -34,7 +40,7 @@ export default {
       return json(createRuntimeProfile("cloudflare-worker"));
     }
     if (url.pathname === "/api/proxy/uu" && request.method === "POST") {
-      return handleUuProxy(request);
+      return handleUuProxy(request, env);
     }
     if (url.pathname.startsWith("/api/remote/")) {
       return handleRemoteApi(request, env);
@@ -50,7 +56,7 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-async function handleUuProxy(request: Request): Promise<Response> {
+async function handleUuProxy(request: Request, env: Env): Promise<Response> {
   try {
     const parsedBody = await readJson(request);
     const body = isRecord(parsedBody) ? parsedBody : {};
@@ -62,25 +68,31 @@ async function handleUuProxy(request: Request): Promise<Response> {
     assertAllowedUuApiPath(path);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), UU_PROXY_TIMEOUT_MS);
-    let response: Response;
     try {
-      response = await fetch(`${API_BASE}${path}`, {
+      const response = await fetch(`${API_BASE}${path}`, {
         method,
         headers: sanitizeUuProxyHeaders(body.headers),
         body: body.body === undefined ? undefined : JSON.stringify(body.body),
         signal: controller.signal,
+        redirect: "error",
+      });
+      const responseText = await readBoundedText(response, controller.signal);
+      const contentType = response.headers.get("content-type") ?? "";
+      const upstreamBody = parseMaybeJsonBody(responseText, contentType);
+      const authorization = authorizeUuRoom(path, response.status, upstreamBody);
+      const sessionId = request.headers.get(REMOTE_SESSION_HEADER);
+      if (authorization && isRemoteSessionId(sessionId)) {
+        await env.REMOTE_SIGNAL_SESSION.getByName(sessionId).authorizeRoom(authorization);
+      }
+      return json({
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: upstreamBody,
       });
     } finally {
       clearTimeout(timeout);
     }
-    const responseText = await response.text();
-    const contentType = response.headers.get("content-type") ?? "";
-    return json({
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries()),
-      body: parseMaybeJsonBody(responseText, contentType),
-    });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   }
@@ -143,7 +155,7 @@ async function routeRemoteApi(request: Request, env: Env): Promise<Response> {
 }
 
 async function readJson(request: Request): Promise<unknown> {
-  const body = await request.text();
+  const body = await readBoundedText(request, AbortSignal.timeout(30_000), 1024 * 1024);
   if (body.trim().length === 0) return undefined;
   try {
     return JSON.parse(body);

@@ -1,30 +1,13 @@
 import { isRemoteSessionId } from "@uurc/shared/remoteSession";
 
-const REMOTE_SESSION_STORAGE_KEY = "uurc.remoteSessionId";
 let inMemorySessionId = "";
 
 export function getRemoteSessionId(): string {
-  const stored = readStoredSessionId();
-  if (stored) return stored;
   if (isRemoteSessionId(inMemorySessionId)) return inMemorySessionId;
 
   const sessionId = createRemoteSessionId();
   inMemorySessionId = sessionId;
-  try {
-    globalThis.sessionStorage?.setItem(REMOTE_SESSION_STORAGE_KEY, sessionId);
-  } catch {
-    // Sandboxed or privacy-restricted browsers can still keep the capability in memory.
-  }
   return sessionId;
-}
-
-function readStoredSessionId(): string | null {
-  try {
-    const stored = globalThis.sessionStorage?.getItem(REMOTE_SESSION_STORAGE_KEY);
-    return isRemoteSessionId(stored) ? stored : null;
-  } catch {
-    return null;
-  }
 }
 
 function createRemoteSessionId(): string {

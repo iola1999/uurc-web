@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { REMOTE_SESSION_HEADER, isRemoteSessionId } from "@uurc/shared/remoteSession";
+import { isAuthorizedSignalRoom } from "@uurc/shared/signalGateway/authorization";
 import {
   ValidationError,
   parseOptionalEventId,
@@ -8,7 +9,7 @@ import {
   parseSignalSoacRequest,
 } from "@uurc/shared/signalGateway/requests";
 
-import type { RemoteControlService } from "../services/remoteControlService.js";
+import { RemoteControlService } from "../services/remoteControlService.js";
 import type { RemoteControlSessionRegistry } from "../services/remoteControlSessionRegistry.js";
 
 export function createRemoteRouter(remoteControlSessions: RemoteControlSessionRegistry): Router {
@@ -21,7 +22,7 @@ export function createRemoteRouter(remoteControlSessions: RemoteControlSessionRe
       return;
     }
     res.locals.remoteSessionId = sessionId;
-    res.locals.remoteControl = remoteControlSessions.getOrCreate(sessionId);
+    res.locals.remoteControl = remoteControlSessions.get(sessionId) ?? new RemoteControlService();
     next();
   });
 
@@ -44,6 +45,12 @@ export function createRemoteRouter(remoteControlSessions: RemoteControlSessionRe
     try {
       const remoteControl = getRemoteControl(res.locals);
       const input = parseSignalGatewayStartRequest(req.body);
+      if (
+        !isAuthorizedSignalRoom(remoteControlSessions.authorization(getRemoteSessionId(res.locals)), input.roomConfig)
+      ) {
+        res.status(403).json({ error: "Join the room through this gateway before starting its signal connection" });
+        return;
+      }
       const status = await remoteControl.startSignalGateway(input);
       if (!status) {
         res.status(404).json({ error: "Join a room before starting remote control" });

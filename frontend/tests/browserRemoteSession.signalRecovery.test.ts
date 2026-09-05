@@ -359,7 +359,7 @@ describe("BrowserRemoteSession signal recovery", () => {
     });
   });
 
-  it("keeps automatic browser ICE gathering open when the signal service recommends relay", async () => {
+  it("uses relay when the signal service requires relay", async () => {
     const api = new FakeRemoteApi({
       forceRelay: true,
     });
@@ -379,7 +379,7 @@ describe("BrowserRemoteSession signal recovery", () => {
     });
 
     expect(peer.configuration).toMatchObject({
-      iceTransportPolicy: "all",
+      iceTransportPolicy: "relay",
     });
     expect(session.getState().controlResult?.forceRelay).toBe(true);
   });

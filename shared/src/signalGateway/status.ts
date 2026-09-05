@@ -13,6 +13,9 @@ import {
 import type { RemoteSignalGatewayStatus } from "./model.js";
 
 export const SIGNAL_GATEWAY_MAX_EVENTS = 200;
+export const SIGNAL_MAX_FRAME_BYTES = 1024 * 1024;
+export const SIGNAL_MAX_SDP_BYTES = 1024 * 1024;
+export const SIGNAL_MAX_EVENT_BYTES = 2 * 1024 * 1024;
 export const SIGNAL_GATEWAY_EVENT_RETENTION_MS = 15 * 60 * 1000;
 
 export function orderSignalGatewayServers(signalServers: string[], preferredIndex: number | undefined): string[] {

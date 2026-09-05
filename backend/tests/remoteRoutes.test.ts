@@ -3,10 +3,18 @@ import { describe, expect, it } from "vitest";
 import { REMOTE_SESSION_HEADER } from "@uurc/shared/remoteSession";
 import { STREAMER_ICE_NETWORK_TYPES } from "@uurc/shared/streamer/signalSoac";
 
-import { createApp } from "../src/app.js";
+import { createApp as createUnregisteredApp, type AppOverrides } from "../src/app.js";
 import type { SignalGatewayConnectOptions, SignalGatewayConnector } from "../src/services/signalGateway.js";
 
 describe("remote routes", () => {
+  it("rejects caller-supplied rooms without contacting their signal server", async () => {
+    const connector = new FakeSignalGatewayConnector();
+    const { app, services } = createUnregisteredApp({ signalGatewayConnector: connector });
+    await request(app).post("/api/remote/signal/start").set(remoteSessionHeader()).send(startPayload()).expect(403);
+    await request(app).get("/api/remote/signal/status").set(remoteSessionHeader()).expect(200);
+    expect(connector.connectCalls).toHaveLength(0);
+    expect(services.remoteControlSessions.size).toBe(0);
+  });
   it("requires an opaque browser session capability", async () => {
     const { app } = createApp();
 
@@ -283,6 +291,16 @@ describe("remote routes", () => {
 
 const REMOTE_SESSION_ID = "0123456789abcdef0123456789abcdef";
 const OTHER_REMOTE_SESSION_ID = "fedcba9876543210fedcba9876543210";
+
+function createApp(overrides: AppOverrides = {}) {
+  const result = createUnregisteredApp(overrides);
+  result.services.remoteControlSessions.authorize(REMOTE_SESSION_ID, {
+    token: startPayload().roomConfig.token,
+    servers: startPayload().roomConfig.signalServers,
+    expiresAt: Date.now() + 60_000,
+  });
+  return result;
+}
 
 function remoteSessionHeader() {
   return { [REMOTE_SESSION_HEADER]: REMOTE_SESSION_ID };

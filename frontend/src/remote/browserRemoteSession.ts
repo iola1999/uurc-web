@@ -262,9 +262,7 @@ export class BrowserRemoteSession {
     this.iceNetworkType = input.iceNetworkType ?? STREAMER_ICE_NETWORK_TYPES.appAuto;
     this.targetPlatform = input.targetPlatform;
     this.processedSignalEventIds.clear();
-    const peer = this.createPeerConnection(
-      buildStreamerRtcConfiguration(result, { forceRelay: input.forceRelay === true }),
-    );
+    const peer = this.createPeerConnection(buildStreamerRtcConfiguration(result, { forceRelay: input.forceRelay }));
     this.peer = peer;
     this.attachPeerDiagnostics(peer, lifecycleGeneration);
     this.channels.create(peer, lifecycleGeneration, MOUSE_MOVE_BUFFERED_AMOUNT_LOW_THRESHOLD);
@@ -315,15 +313,20 @@ export class BrowserRemoteSession {
     return this.getState();
   }
 
+  fail(message: string): BrowserRemoteSessionState {
+    this.close();
+    this.setState({ ...this.state, failureReason: message });
+    return this.getState();
+  }
+
   sendTextData(text: string): void {
-    const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!text) return;
     const sequence = this.sequence;
     const timestampSeconds = this.streamerTimestampSeconds();
     const payload = encodeStreamerTextMessage({
       sequence,
       timestampMs: timestampSeconds,
-      inputMessage: trimmed,
+      inputMessage: text,
       displayId: this.remoteInputDisplayId,
     });
     this.sequence += 1;
@@ -332,7 +335,7 @@ export class BrowserRemoteSession {
       details: {
         sequence,
         timestampSeconds,
-        textLength: trimmed.length,
+        textLength: text.length,
         inputDisplayId: this.remoteInputDisplayId,
         remoteDisplayId: this.remoteDisplayId,
         targetPlatform: this.targetPlatform,
@@ -342,7 +345,7 @@ export class BrowserRemoteSession {
       atMs: this.now(),
       input: {
         action: "text_data",
-        textLength: trimmed.length,
+        textLength: text.length,
       },
     };
   }

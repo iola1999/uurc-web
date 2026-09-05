@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import { STREAMER_CLIENT_TYPES } from "@uurc/shared/streamer/connectOptionsModel";
 import { analyzeRemoteSignalReadiness } from "@uurc/shared/streamer/readiness";
@@ -14,13 +14,14 @@ import { getDeviceGroups } from "../uu/roomApi.js";
 import type { RemoteControlPageProps } from "../components/RemoteControlPage.js";
 import { formatParticipantMeta } from "../devices/deviceLabels.js";
 import { createRemoteControlPresentation } from "../remote/remoteControlPresentation.js";
+import { isDesktopPlatform } from "../remote/browserRemote/utils.js";
 import { remoteShortcutGroupTitleForPlatform } from "../remote/remoteShortcuts.js";
 import { formatSignalGatewayErrorHint } from "../remote/remoteSignalUiModel.js";
 import { useBrowserRemoteSessionController } from "./useBrowserRemoteSessionController.js";
 import { useRemoteAudioController } from "./useRemoteAudioController.js";
 import { useRemoteAutoConnect } from "./useRemoteAutoConnect.js";
 import { useBusyAction } from "./useBusyAction.js";
-import { createRemoteRoomLifecycle } from "./remoteRoomLifecycle.js";
+import { createRemoteRoomLifecycle, releaseRemoteRoom, waitForRoomRelease } from "./remoteRoomLifecycle.js";
 import { useRemoteVideoController } from "./useRemoteVideoController.js";
 import { useRemoteControlPreferences } from "./useRemoteControlPreferences.js";
 import { useRemoteClipboardController } from "./useRemoteClipboardController.js";
@@ -105,6 +106,32 @@ export function useRemoteControlController(context: RemoteControlContext) {
   );
   const navigate = useNavigate();
   const { deviceId: routeSelectedDeviceId = "" } = useParams<{ deviceId: string }>();
+  const [searchParams] = useSearchParams();
+  const assistanceRoute = searchParams.get("assistance") === "1";
+  useEffect(() => {
+    if (assistanceRoute && !roomJoinContext) {
+      navigate(`/partner?id=${encodeURIComponent(routeSelectedDeviceId)}`, { replace: true });
+    }
+  }, [assistanceRoute, roomJoinContext, routeSelectedDeviceId, navigate]);
+
+  const releaseContext = useRef(roomJoinContext);
+  releaseContext.current = roomJoinContext;
+  const leaveControl = useRef(onControlLeave);
+  leaveControl.current = onControlLeave;
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      const contextToRelease = releaseContext.current;
+      queueMicrotask(() => {
+        if (!mounted.current) {
+          leaveControl.current();
+          if (contextToRelease) void releaseRemoteRoom(contextToRelease).catch(() => undefined);
+        }
+      });
+    };
+  }, []);
 
   const allDevices = useMemo(
     () => [...devices.desktopDevices, ...devices.mobileDevices, ...devices.tvDevices],
@@ -236,6 +263,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     sdpTransportMode,
     signalServerIndex,
     roomJoinContext,
+    isActive: () => mounted.current,
     run,
     onDevicesChange,
     onForceJoinChange: setForceJoin,
@@ -278,6 +306,8 @@ export function useRemoteControlController(context: RemoteControlContext) {
   }
 
   async function startBrowserRemoteSession(options: { skipReadinessCheck?: boolean; forceRelay?: boolean } = {}) {
+    await waitForRoomRelease();
+    if (!mounted.current) return;
     if (browserWebRtcUnavailableReason) throw new Error(browserWebRtcUnavailableReason);
     if (!authStatus?.deviceId) throw new Error("登录已失效");
     if (!selectedDeviceId) throw new Error("请选择设备");
@@ -310,15 +340,31 @@ export function useRemoteControlController(context: RemoteControlContext) {
       // 自动切换方案：默认“自动路径”多次重连仍失败时，升级为强制 UU 中转以提升成功率。
       const escalateRelay = connectionRouteMode === "auto" && attemptCount >= 2;
       if (!signalGatewayMatchesRoom) {
+        if (roomJoinContext?.kind !== "remote_assistance") {
+          const joined = await joinRoomForDevice(selectedDeviceId, roomJoinContext?.forceJoin ?? false);
+          if (!joined) throw new Error("重新加入房间失败，请重试");
+        }
+        if (!mounted.current) return;
         resetSignalEvents();
         const status = await startRemoteSignalGateway({
           gzipSdp: sdpTransportMode === "gzip",
           signalServerIndex: signalServerIndex > 0 ? signalServerIndex : undefined,
+        }).catch((caught) => {
+          if (
+            roomJoinContext?.kind === "remote_assistance" &&
+            caught instanceof Error &&
+            caught.message.includes("Join the room")
+          )
+            setRoomJoinContext(null);
+          throw caught;
         });
+        if (!mounted.current) return;
         setSignalGatewayStatus(status);
         setSignalGatewayContext(status.status === "connected" ? roomJoinContext : null);
         setRemoteSignalDiagnostics(await getRemoteSignalDiagnostics());
         if (status.status !== "connected") {
+          if (roomJoinContext?.kind === "remote_assistance" && status.error?.includes("Join the room"))
+            setRoomJoinContext(null);
           throw new Error(formatSignalGatewayErrorHint(status) || "连接服务未启动");
         }
       }
@@ -326,7 +372,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     });
   }
 
-  async function handleNextAction() {
+  async function handleNextAction(force = forceJoin) {
     if (busy !== null) return;
     if (!loggedIn) {
       setError("请先登录");
@@ -342,7 +388,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     }
     if (!roomJoinedForSelectedDevice || roomRequiresTakeover || signalGatewayState === "error") {
       // 自己上一个会话占用时直接接管（force），无需用户再点一次；他人占用仍保留显式两步。
-      const joinWithForce = roomRequiresTakeover || occupiedBySelfClient ? true : forceJoin;
+      const joinWithForce = roomRequiresTakeover || occupiedBySelfClient ? true : force;
       const nextContext = await joinRoomForDevice(selectedDeviceId, joinWithForce);
       if (!nextContext || (nextContext.occupiedAtJoin && !nextContext.forceJoin)) return;
       const status = await handleStartSignalGateway(nextContext);
@@ -494,6 +540,10 @@ export function useRemoteControlController(context: RemoteControlContext) {
   });
 
   const remoteShortcutPlatform = remoteShortcutGroupTitleForPlatform(resolveTargetPlatform());
+  const canSendText =
+    inputControlActive &&
+    controlChannelState === "open" &&
+    (isDesktopPlatform(resolveTargetPlatform()) || textChannelState === "open");
   const controlPageProps: RemoteControlPageProps = {
     shell: {
       deviceNotFound,
@@ -518,11 +568,24 @@ export function useRemoteControlController(context: RemoteControlContext) {
       inputControlActive,
       isFullscreen,
       nextAction,
-      onNextAction: () => void handleNextAction(),
+      onNextAction: (force) => void handleNextAction(force),
       onRemoteShortcut: handleRemoteShortcut,
       onStageViewModeChange: setRemoteStageViewMode,
       onToggleInputControl: handleToggleInputControl,
       onToggleFullscreen: handleToggleFullscreen,
+      canSendText,
+      onSendText: (text) => {
+        const session = browserRemoteSession.current;
+        if (!session || !canSendText) return false;
+        try {
+          session.sendPastedText(text);
+          setBrowserRemoteState(session.getState());
+          return true;
+        } catch (caught) {
+          setError(caught instanceof Error ? caught.message : String(caught));
+          return false;
+        }
+      },
       remoteAudio,
       remoteShortcutPlatform,
       remoteStageViewMode,

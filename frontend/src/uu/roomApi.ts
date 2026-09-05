@@ -4,10 +4,12 @@ import type { RoomJoinResult, RoomJoinUpstreamSummary } from "@uurc/shared/roomS
 
 import { flattenDeviceGroups } from "../devices/deviceSummary.js";
 import { getRoomSession, saveRoomJoinResult, summarizeUpstreamForClient } from "./roomSessionStore.js";
-import { signedUuRequest } from "./uuTransportClient.js";
+import { signedUuRequest, assertUuSuccess } from "./uuTransportClient.js";
 
 export async function getDeviceGroups() {
-  return flattenDeviceGroups(await signedUuRequest({ method: "GET", path: DEVICE_GROUPS_PATH }));
+  const response = await signedUuRequest({ method: "GET", path: DEVICE_GROUPS_PATH });
+  assertUuSuccess(response.body);
+  return flattenDeviceGroups(response);
 }
 
 export async function joinRoomByDevice(deviceId: string, forceJoin: boolean): Promise<RoomJoinResult> {
@@ -24,6 +26,7 @@ export async function clearRoomByDevice(deviceId: string): Promise<RoomJoinUpstr
     method: "POST",
     path: `/api/v1/room/clear/by_device/${encodeURIComponent(deviceId)}`,
   });
+  assertUuSuccess(upstream.body);
   return summarizeUpstreamForClient(upstream);
 }
 

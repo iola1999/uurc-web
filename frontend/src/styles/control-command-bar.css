@@ -1,3 +1,7 @@
+.command-drag-handle {
+  touch-action: none;
+}
+
 .control-command-bar {
   /* 默认停靠在画面底部居中；从把手拖动后切到 fixed 视口坐标，并约束在远控画布内。 */
   position: absolute;
@@ -22,7 +26,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   overflow: visible;
-  touch-action: none;
+  touch-action: pan-x;
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;

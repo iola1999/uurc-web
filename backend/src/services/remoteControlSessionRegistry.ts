@@ -1,14 +1,17 @@
 import { createHash } from "node:crypto";
+import { REMOTE_SESSION_IDLE_MS, type SignalRoomAuthorization } from "@uurc/shared/signalGateway/authorization";
 
 import { RemoteControlService } from "./remoteControlService.js";
 import type { SignalGatewayConnector } from "./signalGateway.js";
 
 const DEFAULT_MAX_REMOTE_SESSIONS = 64;
-const DEFAULT_REMOTE_SESSION_IDLE_TTL_MS = 60 * 60 * 1000;
+const DEFAULT_REMOTE_SESSION_IDLE_TTL_MS = REMOTE_SESSION_IDLE_MS;
 
 interface RemoteControlSessionEntry {
   service: RemoteControlService;
   lastAccessedAt: number;
+  timer: ReturnType<typeof setTimeout>;
+  authorization?: SignalRoomAuthorization;
 }
 
 interface RemoteControlSessionRegistryOptions {
@@ -38,17 +41,42 @@ export class RemoteControlSessionRegistry {
     const existing = this.sessions.get(sessionId);
     if (existing) {
       existing.lastAccessedAt = now;
+      existing.timer.refresh();
       return existing.service;
     }
 
-    if (this.sessions.size >= this.maxSessions) this.evictOldest();
+    if (this.sessions.size >= this.maxSessions) throw new Error("Remote session capacity reached; retry later");
 
     const service = new RemoteControlService(undefined, this.signalGatewayConnector, hashSessionId(sessionId));
-    this.sessions.set(sessionId, { service, lastAccessedAt: now });
+    const timer = setTimeout(() => {
+      const entry = this.sessions.get(sessionId);
+      if (entry) this.evict(sessionId, entry);
+    }, this.idleTtlMs);
+    timer.unref();
+    this.sessions.set(sessionId, { service, lastAccessedAt: now, timer });
     return service;
   }
 
+  get(sessionId: string): RemoteControlService | undefined {
+    this.pruneExpired(this.now());
+    const entry = this.sessions.get(sessionId);
+    if (!entry) return undefined;
+    entry.lastAccessedAt = this.now();
+    entry.timer.refresh();
+    return entry.service;
+  }
+
+  authorize(sessionId: string, authorization: SignalRoomAuthorization): void {
+    this.getOrCreate(sessionId);
+    this.sessions.get(sessionId)!.authorization = authorization;
+  }
+
+  authorization(sessionId: string): SignalRoomAuthorization | undefined {
+    return this.sessions.get(sessionId)?.authorization;
+  }
+
   release(sessionId: string): void {
+    clearTimeout(this.sessions.get(sessionId)?.timer);
     this.sessions.delete(sessionId);
   }
 
@@ -62,16 +90,8 @@ export class RemoteControlSessionRegistry {
     }
   }
 
-  private evictOldest(): void {
-    let oldest: [string, RemoteControlSessionEntry] | undefined;
-    for (const entry of this.sessions) {
-      if (!oldest || entry[1].lastAccessedAt < oldest[1].lastAccessedAt) oldest = entry;
-    }
-    if (oldest) this.evict(...oldest);
-  }
-
   private evict(sessionId: string, entry: RemoteControlSessionEntry): void {
-    this.sessions.delete(sessionId);
+    this.release(sessionId);
     void entry.service.stopSignalGateway().catch(() => {
       // Session eviction must continue even when a connector fails during cleanup.
     });

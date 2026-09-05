@@ -1,0 +1,184 @@
+{
+  "commandEnter": {
+    "url": "http://127.0.0.1:18877/devices/audit-desktop/control",
+    "lastCall": "/api/runtime"
+  },
+  "dialogFocus": {
+    "active": "<button class=\"primary-action-button\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plug-zap\"><path d=\"M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z\"></path><path d=\"m2 22 3-3\"></path><path d=\"M7.5 13.5 10 11\"></path><path d=\"M10.5 16.5 13 14\"></path><path d=\"m18 3-4 4h6l-4 4\"></path></svg>开始连接</button>",
+    "inside": false
+  },
+  "dialogLayout": {
+    "width": 438,
+    "scrollWidth": 470,
+    "opacity": "1",
+    "color": "rgb(10, 10, 10)",
+    "background": "rgb(255, 255, 255)",
+    "children": [
+      {
+        "text": "普通加入请求加入，若对方仍在线可能需要接管才能继续",
+        "x": 525,
+        "width": 276.703125,
+        "whiteSpace": "nowrap"
+      },
+      {
+        "text": "接管控制断开对方连接，独占控制",
+        "x": 811.703125,
+        "width": 159.234375,
+        "whiteSpace": "nowrap"
+      },
+      {
+        "text": "取消",
+        "x": 707.234375,
+        "width": 25.515625,
+        "whiteSpace": "nowrap"
+      }
+    ]
+  },
+  "takeover": [
+    {
+      "force_join": false
+    }
+  ],
+  "escapeFullscreen": 1,
+  "backCleanup": [],
+  "expiredDevices": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n0\n远控伙伴\n账号与凭证\n网页控制端\naudit-web\n我的设备\n连接\n在线 · 2\nAudit Desktop\n桌面端 · 可控制\n连接\nSecond Desktop\n桌面端 · 可控制\n连接\n\nTV · 暂无设备\n\n暂无设备",
+  "desktopErrors": [],
+  "mobileToolbar": {
+    "width": 372,
+    "scrollWidth": 662,
+    "touchAction": "none",
+    "overflow": "auto",
+    "buttons": [
+      {
+        "text": "",
+        "x": 14,
+        "width": 19
+      },
+      {
+        "text": "仅查看",
+        "x": 40,
+        "width": 89.3125
+      },
+      {
+        "text": "控制中",
+        "x": 131.3125,
+        "width": 89.3125
+      },
+      {
+        "text": "",
+        "x": 227.625,
+        "width": 38
+      },
+      {
+        "text": "填充画面",
+        "x": 353.625,
+        "width": 108.09375
+      },
+      {
+        "text": "全屏",
+        "x": 465.71875,
+        "width": 80.546875
+      },
+      {
+        "text": "Ctrl Alt Del",
+        "x": 0,
+        "width": 316
+      },
+      {
+        "text": "Alt Tab",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Alt F4",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Win D",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Win L",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Ctrl Shift Esc",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Tab",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Space",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Opt Esc",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Q",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd W",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd H",
+        "x": 336.578125,
+        "width": 316
+      },
+      {
+        "text": "Esc",
+        "x": 336.578125,
+        "width": 316
+      }
+    ]
+  },
+  "mobileSwipeBeforeOverride": 0,
+  "mobileSwipeAfterOverride": 290,
+  "mobileStage": {
+    "editable": false,
+    "tabIndex": 0,
+    "inputCount": 0
+  },
+  "mobileOverflow": {
+    "viewport": 390,
+    "body": 390
+  },
+  "mobileErrors": [],
+  "copiedSession": {
+    "parentPresent": true,
+    "childPresent": true,
+    "equal": true
+  },
+  "assistanceReload": {
+    "body": "返回设备列表\n设备不存在\n找不到这台设备\n\n该设备可能已被移除、不属于当前账号，或链接已失效。请返回设备列表重新选择。\n\n返回设备列表",
+    "stored": true
+  },
+  "quickConnect": {
+    "url": "http://127.0.0.1:18877/devices",
+    "inputs": 1,
+    "body": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n2\n远控伙伴\n账号与凭证\n网页控制端\naudit-web\n我的设备\n连接\n伙伴设备当前要求输入设备验证码\n在线 · 2\nAudit Desktop\n桌面端 · 可控制\n连接\nSecond Desktop\n桌面端 · 可控制\n连接\n\nTV · 暂无设备"
+  },
+  "malformedAuth": {
+    "body": "",
+    "errors": ["TypeError: Cannot read properties of null (reading 'exp')"]
+  },
+  "plainHttp": {
+    "secure": false,
+    "crypto": false,
+    "body": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n0\n远控伙伴\n账号与凭证\n网页控制端\naudit\n我的设备\n连接\nWeb Crypto is unavailable in this browser"
+  }
+}

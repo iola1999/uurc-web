@@ -40,12 +40,15 @@ npm run dev
 npm run format:check
 npm run lint
 npm run typecheck -w frontend
+npm run typecheck:cloudflare
 npm test
 npm run build
 npm run check:cloudflare
 ```
 
 Node 网关改动应补充 backend 测试，Worker 信令改动应补充 Cloudflare 测试。浏览器远控行为请放进对应的前端专项测试文件，保持用例职责清楚。
+
+`npm test` 包含 `cloudflare/tests/runtime/` 中的 Worker 运行时测试，使用合成数据在本地检查 HTTP 路由、SQLite、alarm、实例重建和并发启停。
 
 ## 提交信息
 

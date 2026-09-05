@@ -61,7 +61,7 @@ export function RemoteControlPage(props: RemoteControlPageProps) {
     setOccupiedDialogOpen(false);
     setOccupancyAcknowledged(true);
     if (force) props.settings.onForceJoinChange(true);
-    props.commandBar.onNextAction();
+    props.commandBar.onNextAction(force);
   }
 
   if (shell.deviceNotFound) {

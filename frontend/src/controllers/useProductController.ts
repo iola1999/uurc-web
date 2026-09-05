@@ -30,6 +30,7 @@ import { useAutoLoadDevices } from "./useAutoLoadDevices.js";
 import { useBusyAction } from "./useBusyAction.js";
 import { useDeviceController } from "./useDeviceController.js";
 import { useToastController } from "./useToastController.js";
+import { waitForRoomRelease } from "./remoteRoomLifecycle.js";
 
 export function useProductController() {
   const accountState = useAccountController();
@@ -194,6 +195,7 @@ export function useProductController() {
     preloadRemoteControlRoute();
     deviceState.setAssistanceNotice("");
     await runProductAction("assistance", async () => {
+      await waitForRoomRelease();
       const connectId = deviceState.assistanceConnectId.trim();
       const connectCode = deviceState.assistanceConnectCode.trim();
       const modeResult = await getRemoteAssistanceControlMode(connectId);
@@ -219,6 +221,7 @@ export function useProductController() {
         deviceState.setAssistanceNotice("正在等待伙伴设备确认...");
         joined = await joinRemoteAssistanceByConfirmation({ connectId, controlMode: modeResult.controlMode });
       } else {
+        navigate(`/partner?id=${encodeURIComponent(connectId)}`);
         throw new Error("伙伴设备当前要求输入设备验证码");
       }
 
@@ -249,8 +252,15 @@ export function useProductController() {
       });
       deviceState.setForceJoin(false);
       deviceState.setAssistanceNotice(`已进入远程协助：${formatRemoteAssistanceMode(modeResult.controlMode)}`);
-      startTransition(() => navigate(`/devices/${encodeURIComponent(joined.assistance.connectId)}/control`));
+      startTransition(() =>
+        navigate(`/devices/${encodeURIComponent(joined.assistance.connectId)}/control?assistance=1`),
+      );
     });
+  }
+
+  function changeAssistanceConnectId(value: string) {
+    if (value !== deviceState.assistanceConnectId) deviceState.setAssistanceConnectCode("");
+    deviceState.setAssistanceConnectId(value);
   }
 
   return {
@@ -294,7 +304,7 @@ export function useProductController() {
       onLoadDevices: () => void loadDevices(),
       onSelectDevice: deviceState.setSelectedDeviceId,
       onOpenDevice: handleOpenDevice,
-      onAssistanceConnectIdChange: deviceState.setAssistanceConnectId,
+      onAssistanceConnectIdChange: changeAssistanceConnectId,
       onStartRemoteAssistance: () => void handleStartRemoteAssistance(),
     },
     assistance: {
@@ -304,7 +314,7 @@ export function useProductController() {
       error,
       notice: deviceState.assistanceNotice,
       onConnectCodeChange: deviceState.setAssistanceConnectCode,
-      onConnectIdChange: deviceState.setAssistanceConnectId,
+      onConnectIdChange: changeAssistanceConnectId,
       onStart: () => void handleStartRemoteAssistance(),
     },
     account: {

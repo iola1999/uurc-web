@@ -15,6 +15,40 @@ import {
 } from "../api/remoteSignalApi.js";
 import { cancelRemoteAssistance } from "../uu/remoteAssistanceApi.js";
 import { clearRoomByDevice, getDeviceGroups, getRemoteBootstrap, joinRoomByDevice } from "../uu/roomApi.js";
+import { clearRoomSession } from "../uu/roomSessionStore.js";
+
+let pendingRelease: Promise<RemoteSignalGatewayStatus> | null = null;
+let pendingJoin: Promise<RoomJoinResult | null> | null = null;
+
+export async function waitForRoomRelease(): Promise<void> {
+  // 先让上一页面的卸载清理登记，再等待其请求结束。
+  await Promise.resolve();
+  await pendingJoin?.catch(() => undefined);
+  await pendingRelease?.catch(() => undefined);
+}
+
+export function releaseRemoteRoom(context: RoomJoinContext): Promise<RemoteSignalGatewayStatus> {
+  if (pendingRelease) return pendingRelease;
+  pendingRelease = (async () => {
+    const [stopped, released] = await Promise.allSettled([
+      stopRemoteSignalGateway(),
+      context.kind === "remote_assistance"
+        ? cancelRemoteAssistance(context.connectId ?? context.deviceId)
+        : clearRoomByDevice(context.deviceId),
+    ]);
+    clearRoomSession();
+    if (stopped.status === "rejected") throw stopped.reason;
+    return {
+      ...stopped.value,
+      ...(released.status === "fulfilled"
+        ? { roomClear: released.value }
+        : { roomClearError: released.reason instanceof Error ? released.reason.message : String(released.reason) }),
+    };
+  })().finally(() => {
+    pendingRelease = null;
+  });
+  return pendingRelease;
+}
 
 type RunAction = (action: Exclude<BusyAction, null>, task: () => Promise<void>) => Promise<boolean>;
 
@@ -26,6 +60,7 @@ interface RemoteRoomLifecycleOptions {
   sdpTransportMode: "gzip" | "plain";
   signalServerIndex: number;
   roomJoinContext: RoomJoinContext | null;
+  isActive?(): boolean;
   run: RunAction;
   onDevicesChange(devices: UuDeviceGroups): void;
   onForceJoinChange(forceJoin: boolean): void;
@@ -49,6 +84,8 @@ export function createRemoteRoomLifecycle(options: RemoteRoomLifecycleOptions) {
     if (!deviceId) return null;
     let nextContext: RoomJoinContext | null = null;
     await options.run("join", async () => {
+      await waitForRoomRelease();
+      if (options.isActive?.() === false) return;
       if (deviceId === options.authDeviceId) throw new Error(SELF_DEVICE_BLOCKED_REASON);
       const device = options.allDevices.find((item) => item.deviceId === deviceId) ?? null;
       const context: RoomJoinContext = {
@@ -57,7 +94,21 @@ export function createRemoteRoomLifecycle(options: RemoteRoomLifecycleOptions) {
         forceJoin: joinWithForce,
         occupiedAtJoin: (device?.participantsInfo?.length ?? 0) > 0,
       };
-      const joined = await joinRoomByDevice(deviceId, joinWithForce);
+      const joining = joinRoomByDevice(deviceId, joinWithForce).then(async (joined) => {
+        if (options.isActive?.() === false) {
+          await releaseRemoteRoom(context);
+          return null;
+        }
+        return joined;
+      });
+      pendingJoin = joining;
+      let joined;
+      try {
+        joined = await joining;
+      } finally {
+        if (pendingJoin === joining) pendingJoin = null;
+      }
+      if (!joined) return;
       options.setRoomResponse(joined);
       options.setRoomJoinContext(context);
       options.onForceJoinChange(joinWithForce);
@@ -72,12 +123,15 @@ export function createRemoteRoomLifecycle(options: RemoteRoomLifecycleOptions) {
   async function startSignalGateway(context = options.roomJoinContext): Promise<RemoteSignalGatewayStatus | null> {
     let nextStatus: RemoteSignalGatewayStatus | null = null;
     await options.run("signal-start", async () => {
+      await waitForRoomRelease();
+      if (options.isActive?.() === false) return;
       if (!context || context.deviceId !== options.selectedDeviceId) throw new Error("请先加入房间");
       options.resetSignalEvents();
       const status = await startRemoteSignalGateway({
         gzipSdp: options.sdpTransportMode === "gzip",
         signalServerIndex: options.signalServerIndex > 0 ? options.signalServerIndex : undefined,
       });
+      if (options.isActive?.() === false) return;
       nextStatus = status;
       options.setSignalGatewayStatus(status);
       options.setSignalGatewayContext(status.status === "connected" ? context : null);
@@ -89,37 +143,17 @@ export function createRemoteRoomLifecycle(options: RemoteRoomLifecycleOptions) {
   async function stopSignalGateway(): Promise<void> {
     await options.run("signal-stop", async () => {
       options.resetBrowserRemoteSession();
-      const stopped = await stopRemoteSignalGateway();
-      let nextStatus = stopped;
       const clearContext = options.roomJoinContext;
-      if (clearContext?.deviceId) {
-        try {
-          nextStatus = {
-            ...stopped,
-            roomClear:
-              clearContext.kind === "remote_assistance"
-                ? await cancelRemoteAssistance(clearContext.connectId ?? clearContext.deviceId)
-                : await clearRoomByDevice(clearContext.deviceId),
-            updatedAt: new Date().toISOString(),
-          };
-        } catch (caught) {
-          nextStatus = {
-            ...stopped,
-            roomClearError: caught instanceof Error ? caught.message : String(caught),
-            updatedAt: new Date().toISOString(),
-          };
-        }
-      }
+      options.setRoomResponse(null);
+      options.setRoomJoinContext(null);
+      options.setRemoteBootstrap(null);
+      options.setSignalGatewayContext(null);
+      options.resetSignalEvents();
+      const nextStatus = clearContext ? await releaseRemoteRoom(clearContext) : await stopRemoteSignalGateway();
       options.setSignalGatewayStatus(nextStatus);
       options.setSignalGatewayContext(null);
       options.resetSignalEvents();
       options.showToast("已断开远控连接");
-      if (
-        nextStatus.roomClear &&
-        (nextStatus.roomClear.body.code === undefined || nextStatus.roomClear.body.code === 0)
-      ) {
-        options.setRoomJoinContext((current) => (current ? { ...current, occupiedAtJoin: false } : current));
-      }
       if (clearContext?.kind !== "remote_assistance") {
         try {
           options.onDevicesChange(await getDeviceGroups());

@@ -56,7 +56,7 @@ describe("BrowserRemoteSession", () => {
       encodeStreamerTextMessage({
         sequence: 1,
         timestampMs: 1,
-        inputMessage: "hello",
+        inputMessage: " hello ",
       }),
     ]);
   });

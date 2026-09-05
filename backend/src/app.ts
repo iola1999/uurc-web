@@ -28,7 +28,7 @@ export function createApp(overrides: AppOverrides = {}) {
   app.disable("x-powered-by");
   app.use(requestLogger);
   app.use(compression({ threshold: 1024 }));
-  app.use(express.json({ limit: "10mb" }));
+  app.use(express.json({ limit: "1mb" }));
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, runtime: "node" });
   });
@@ -37,7 +37,7 @@ export function createApp(overrides: AppOverrides = {}) {
   });
 
   app.use("/api", createRemoteRouter(remoteControlSessions));
-  app.use("/api", createProxyRouter());
+  app.use("/api", createProxyRouter(fetch, remoteControlSessions));
 
   if (config.enableDiagnostics) {
     app.use("/api", createDiagnosticsRouter(config));

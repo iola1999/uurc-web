@@ -8,6 +8,7 @@ import {
   sendRemoteSignalSoac,
 } from "../src/api/remoteSignalApi.js";
 import { getRuntimeProfile } from "../src/api/runtimeApi.js";
+import { getRemoteSessionId } from "../src/api/remoteSession.js";
 
 describe("frontend remote signal API", () => {
   beforeEach(() => {
@@ -143,7 +144,7 @@ describe("frontend remote signal API", () => {
       ],
     ]);
     for (const call of calls.filter((item) => item.path.startsWith("/api/remote/signal"))) {
-      expect(new Headers(call.init?.headers).get(REMOTE_SESSION_HEADER)).toBe("0123456789abcdef0123456789abcdef");
+      expect(new Headers(call.init?.headers).get(REMOTE_SESSION_HEADER)).toBe(getRemoteSessionId());
     }
   });
 });

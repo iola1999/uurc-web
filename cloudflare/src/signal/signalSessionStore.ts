@@ -1,4 +1,8 @@
-import { SIGNAL_GATEWAY_EVENT_RETENTION_MS, SIGNAL_GATEWAY_MAX_EVENTS } from "@uurc/shared/signalGateway/status";
+import {
+  SIGNAL_GATEWAY_EVENT_RETENTION_MS,
+  SIGNAL_GATEWAY_MAX_EVENTS,
+  SIGNAL_MAX_EVENT_BYTES,
+} from "@uurc/shared/signalGateway/status";
 import type {
   RemoteSignalGatewayEvent,
   RemoteSignalGatewayEventDirection,
@@ -81,9 +85,13 @@ export class SignalSessionStore {
       "DELETE FROM signal_events WHERE id NOT IN (SELECT id FROM signal_events ORDER BY id DESC LIMIT ?)",
       SIGNAL_GATEWAY_MAX_EVENTS,
     );
+    this.sql.exec(
+      "DELETE FROM signal_events WHERE id IN (SELECT id FROM (SELECT id, SUM(length(CAST(payload_json AS BLOB)) + length(CAST(event AS BLOB)) + 128) OVER (ORDER BY id DESC) AS total FROM signal_events) WHERE total > ?)",
+      SIGNAL_MAX_EVENT_BYTES,
+    );
   }
 
-  private pruneEvents(): void {
+  pruneEvents(): void {
     const cutoff = new Date(Date.now() - SIGNAL_GATEWAY_EVENT_RETENTION_MS).toISOString();
     this.sql.exec("DELETE FROM signal_events WHERE received_at < ?", cutoff);
   }

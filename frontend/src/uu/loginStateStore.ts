@@ -26,8 +26,10 @@ export function clearStoredLoginState(): AuthStatus {
 
 export function importStoredLoginState(input: unknown): AuthStatus {
   const state = normalizeLoginState(input);
+  const status = summarizeAuthState(state);
+  if (!status.hasState) throw new Error(`账号凭证缺少 ${status.missingFields.join("、")}`);
   window.localStorage.setItem(LOGIN_STATE_KEY, JSON.stringify(state));
-  return summarizeAuthState(state);
+  return status;
 }
 
 export function patchStoredLoginState(input: Partial<LoginState>): AuthStatus {

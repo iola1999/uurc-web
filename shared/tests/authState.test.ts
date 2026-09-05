@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { decodeJwtPayload, summarizeAuthState } from "../src/authState.js";
 
-function fakeJwt(payload: Record<string, unknown>): string {
+function fakeJwt(payload: unknown): string {
   const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   return `header.${encoded}.signature`;
 }
 
 describe("auth state helpers", () => {
+  it.each([null, [], 1, "payload", { exp: 1e300 }, { exp: -1e300 }])(
+    "handles malformed JWT claims without crashing: %j",
+    (payload) => {
+      expect(() =>
+        summarizeAuthState({ token: fakeJwt(payload), userId: "synthetic", deviceId: "synthetic" }),
+      ).not.toThrow();
+      expect(summarizeAuthState({ token: fakeJwt(payload) }).tokenExpiresAt).toBeUndefined();
+    },
+  );
   it("decodes JWT payloads without throwing on malformed tokens", () => {
     expect(decodeJwtPayload(fakeJwt({ client_id: "client-1", exp: 1893456000 }))).toMatchObject({
       client_id: "client-1",

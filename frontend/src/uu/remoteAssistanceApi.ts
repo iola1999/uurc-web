@@ -12,7 +12,7 @@ import {
   saveRemoteAssistanceRoomJoinResult,
   summarizeUpstreamForClient,
 } from "./roomSessionStore.js";
-import { signedUuRequest } from "./uuTransportClient.js";
+import { signedUuRequest, assertUuSuccess } from "./uuTransportClient.js";
 
 const CONFIRMATION_REQUIRED_CODE = 0x470;
 const CONTROL_MODES = new Set<RemoteAssistanceControlMode>(["by_password", "by_confirmation", "password_confirmation"]);
@@ -80,6 +80,7 @@ export async function cancelRemoteAssistance(connectId: string): Promise<RoomJoi
     path: "/api/v2/room/share/cancel_remote_assist",
     body: { connect_id: normalizeConnectId(connectId) },
   });
+  assertUuSuccess(upstream.body);
   return summarizeUpstreamForClient(upstream);
 }
 

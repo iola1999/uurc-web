@@ -4,6 +4,7 @@ import { vi } from "vitest";
 import AppComponent from "../src/App.js";
 import { appBackend, handleFetch } from "./appBackendFixture.js";
 import { TestPeerConnection } from "./appBrowserFakes.js";
+import { waitForRoomRelease } from "../src/controllers/remoteRoomLifecycle.js";
 
 export const App = AppComponent;
 
@@ -95,8 +96,10 @@ export function setupAppTest(): void {
   vi.stubGlobal("fetch", vi.fn(handleFetch));
 }
 
-export function cleanupAppTest(): void {
+export async function cleanupAppTest(): Promise<void> {
   cleanup();
+  await Promise.resolve();
+  await waitForRoomRelease();
   vi.unstubAllGlobals();
 }
 

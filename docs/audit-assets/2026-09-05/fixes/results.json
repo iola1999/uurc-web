@@ -1,0 +1,379 @@
+{
+  "commandEnter": {
+    "url": "http://127.0.0.1:18877/devices",
+    "lastCall": "/api/proxy/uu"
+  },
+  "initialControlError": [],
+  "dialogFocus": {
+    "active": "<button type=\"button\" class=\"occupied-dialog-option occupied-dialog-option-normal\"><span>普通加入</span><small>请求加入，若对方仍在线可能需要接管才能继续</small></button>",
+    "inside": true
+  },
+  "dialogLayout": {
+    "width": 438,
+    "scrollWidth": 438,
+    "opacity": "1",
+    "color": "rgb(10, 10, 10)",
+    "background": "rgb(255, 255, 255)",
+    "children": [
+      {
+        "text": "普通加入请求加入，若对方仍在线可能需要接管才能继续",
+        "x": 525,
+        "width": 190,
+        "whiteSpace": "normal"
+      },
+      {
+        "text": "接管控制断开对方连接，独占控制",
+        "x": 725,
+        "width": 190,
+        "whiteSpace": "normal"
+      },
+      {
+        "text": "取消",
+        "x": 707.234375,
+        "width": 25.515625,
+        "whiteSpace": "nowrap"
+      }
+    ]
+  },
+  "focusLoopBack": "取消",
+  "focusLoopForward": "普通加入请求加入，若对方仍在线可能需要接管才能继续",
+  "focusRestored": "开始连接",
+  "zoomedDialog": {
+    "width": 438,
+    "scrollWidth": 438
+  },
+  "takeover": [
+    {
+      "force_join": true
+    }
+  ],
+  "escapeRemoteKeys": [],
+  "escapeFullscreen": 0,
+  "desktopToolbarDrag": {
+    "before": {
+      "x": 205.2109375,
+      "y": 830,
+      "width": 729.578125,
+      "height": 50
+    },
+    "after": {
+      "x": 133.22897338867188,
+      "y": 770,
+      "width": 729.5781555175781,
+      "height": 50
+    }
+  },
+  "backCleanup": [
+    {
+      "path": "/api/remote/signal",
+      "method": "DELETE",
+      "body": null,
+      "session": "eb08d997a6dc4ec19f7cf3e1be6dc289"
+    },
+    {
+      "path": "/api/proxy/uu",
+      "method": "POST",
+      "body": {
+        "method": "POST",
+        "path": "/api/v1/room/clear/by_device/audit-desktop",
+        "headers": {
+          "X-Param-CHN": "nochannel",
+          "X-Param-OPR": "",
+          "X-Param-PKGN": "com.netease.uuremote",
+          "X-Param-PLAT": "2",
+          "X-Param-REL": "prod",
+          "X-Param-VC": "423000",
+          "X-Param-VN": "4.23.0",
+          "X-Param-ABI": "arm64-v8a",
+          "X-Param-client-id": "audit-client",
+          "X-Param-device-id": "audit-web",
+          "X-Param-user-id": "audit-user",
+          "X-Param-OAID": "",
+          "X-Param-TS": "1788580142",
+          "X-Param-CNT": "CN",
+          "X-Param-LANG": "zh-CN",
+          "X-Param-SIGN": "ce5356195543242ae08e1b7ca14ac7a26568b1c8e571d20cc9e2c2cb16806b28",
+          "Authorization": "Bearer audit.token.value"
+        }
+      },
+      "session": "eb08d997a6dc4ec19f7cf3e1be6dc289"
+    }
+  ],
+  "expiredDevices": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n2\n远控伙伴\n账号与凭证\n网页控制端\naudit-web\n我的设备\n连接\n登录已失效，请重新登录 UU 账号\n在线 · 2\nAudit Desktop\n桌面端 · 可控制\n连接\nSecond Desktop\n桌面端 · 可控制\n连接\n\nTV · 暂无设备",
+  "desktopErrors": [],
+  "mobileToolbar": {
+    "width": 372,
+    "scrollWidth": 713,
+    "touchAction": "pan-x",
+    "overflow": "auto",
+    "buttons": [
+      {
+        "text": "",
+        "x": 14,
+        "width": 19
+      },
+      {
+        "text": "仅查看",
+        "x": 40,
+        "width": 89.3125
+      },
+      {
+        "text": "控制中",
+        "x": 131.3125,
+        "width": 89.3125
+      },
+      {
+        "text": "",
+        "x": 227.625,
+        "width": 38
+      },
+      {
+        "text": "",
+        "x": 353.625,
+        "width": 47
+      },
+      {
+        "text": "填充画面",
+        "x": 404.625,
+        "width": 108.09375
+      },
+      {
+        "text": "全屏",
+        "x": 516.71875,
+        "width": 80.546875
+      },
+      {
+        "text": "Ctrl Alt Del",
+        "x": 0,
+        "width": 316
+      },
+      {
+        "text": "Alt Tab",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Alt F4",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Win D",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Win L",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Ctrl Shift Esc",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Tab",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Space",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Opt Esc",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd Q",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd W",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Cmd H",
+        "x": 387.578125,
+        "width": 316
+      },
+      {
+        "text": "Esc",
+        "x": 387.578125,
+        "width": 316
+      }
+    ]
+  },
+  "mobileSwipeBeforeOverride": 341,
+  "mobileTextInput": [
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 1, 16, 175, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 49, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 2, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 50, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 3, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 51, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 4, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 52, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 5, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 53, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 6, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 54, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 7, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 55, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 8, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 56, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 9, 16, 176, 162, 238, 212, 6, 26, 27, 18, 9, 123, 34, 115, 101, 113, 34, 58, 57, 125, 34, 14, 8, 2, 16, 1,
+        24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 10, 16, 176, 162, 238, 212, 6, 26, 28, 18, 10, 123, 34, 115, 101, 113, 34, 58, 49, 48, 125, 34, 14, 8, 2, 16,
+        1, 24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 11, 16, 176, 162, 238, 212, 6, 26, 28, 18, 10, 123, 34, 115, 101, 113, 34, 58, 49, 49, 125, 34, 14, 8, 2, 16,
+        1, 24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 12, 16, 177, 162, 238, 212, 6, 26, 28, 18, 10, 123, 34, 115, 101, 113, 34, 58, 49, 50, 125, 34, 14, 8, 2, 16,
+        1, 24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 13, 16, 177, 162, 238, 212, 6, 26, 28, 18, 10, 123, 34, 115, 101, 113, 34, 58, 49, 51, 125, 34, 14, 8, 2, 16,
+        1, 24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 14, 16, 177, 162, 238, 212, 6, 26, 28, 18, 10, 123, 34, 115, 101, 113, 34, 58, 49, 52, 125, 34, 14, 8, 2, 16,
+        1, 24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 15, 16, 177, 162, 238, 212, 6, 26, 28, 18, 10, 123, 34, 115, 101, 113, 34, 58, 49, 53, 125, 34, 14, 8, 2, 16,
+        1, 24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": [
+        8, 16, 16, 177, 162, 238, 212, 6, 26, 28, 18, 10, 123, 34, 115, 101, 113, 34, 58, 49, 54, 125, 34, 14, 8, 2, 16,
+        1, 24, 2, 32, 2, 48, 2, 56, 2, 64, 3
+      ]
+    },
+    {
+      "label": "CONTROL_DATA_CHANNEL",
+      "data": "{\"action\":\"text_input\",\"content\":\"  中文输入\\n第二行  \"}"
+    }
+  ],
+  "mobileStage": {
+    "editable": false,
+    "tabIndex": 0,
+    "inputCount": 0
+  },
+  "mobileOverflow": {
+    "viewport": 390,
+    "body": 390
+  },
+  "responsiveMatrix": [
+    {
+      "width": 320,
+      "bodyWidth": 320,
+      "toolbarWidth": 302,
+      "toolbarScrollWidth": 713
+    },
+    {
+      "width": 844,
+      "bodyWidth": 844,
+      "toolbarWidth": 728,
+      "toolbarScrollWidth": 728
+    }
+  ],
+  "mobileSwipe320": 317,
+  "mobileErrors": [],
+  "copiedSession": {
+    "parentPresent": true,
+    "childPresent": true,
+    "equal": false
+  },
+  "assistanceReload": {
+    "body": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n2\n远控伙伴\n账号与凭证\n网页控制端\naudit-web\n远控伙伴\n远控伙伴设备\n\n通过伙伴的设备 ID 和设备验证码发起远程协助。\n\n伙伴的设备 ID\n设备验证码 · 可留空\n发起连接\n验证码留空：对方需在其设备上点「确认」；若对方设置了验证码，向对方索取后填入即可直连。",
+    "stored": false
+  },
+  "quickConnect": {
+    "url": "http://127.0.0.1:18877/partner?id=123456789",
+    "inputs": 2,
+    "body": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n2\n远控伙伴\n账号与凭证\n网页控制端\naudit-web\n远控伙伴\n伙伴设备当前要求输入设备验证码\n远控伙伴设备\n\n通过伙伴的设备 ID 和设备验证码发起远程协助。\n\n伙伴的设备 ID\n设备验证码 · 可留空\n发起连接\n验证码留空：对方需在其设备上点「确认」；若对方设置了验证码，向对方索取后填入即可直连。"
+  },
+  "malformedAuth": {
+    "body": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n2\n远控伙伴\n账号与凭证\n网页控制端\naudit\n我的设备\n连接\n\n正在加载设备…\n\n在线 · 2\nAudit Desktop\n桌面端 · 可控制\n连接\nSecond Desktop\n桌面端 · 可控制\n连接\n\nTV · 暂无设备",
+    "errors": []
+  },
+  "plainHttp": {
+    "secure": false,
+    "crypto": false,
+    "body": "UU Remote\nWEB\n搜索设备\n⌘K\n我的设备\n0\n远控伙伴\n账号与凭证\n网页控制端\naudit\n我的设备\n连接\n当前页面无法使用安全加密，请通过 HTTPS 或 localhost 访问后重试"
+  }
+}

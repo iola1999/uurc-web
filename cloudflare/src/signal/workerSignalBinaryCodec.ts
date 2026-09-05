@@ -1,11 +1,16 @@
 import type { AsyncSignalGatewayBinaryCodec } from "@uurc/shared/signalGateway/payload";
+import { SIGNAL_MAX_SDP_BYTES } from "@uurc/shared/signalGateway/status";
+import { readBoundedText } from "@uurc/shared/uuProxy";
 
 export const workerSignalGatewayBinary: AsyncSignalGatewayBinaryCodec<Uint8Array> = {
   decodeBase64: decodeBase64Bytes,
   toBinary: toSignalBytes,
   byteLength: (value) => value.byteLength,
   encodeBase64: bytesToBase64,
-  gzipText: (value) => transformBytes(new TextEncoder().encode(value), "gzip", "compress"),
+  gzipText: async (value) => {
+    const stream = new Blob([new TextEncoder().encode(value)]).stream().pipeThrough(new CompressionStream("gzip"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  },
   gunzipText,
 };
 
@@ -53,21 +58,9 @@ async function gunzipText(value: unknown): Promise<string | null> {
   const bytes = toSignalBytes(value);
   if (!bytes) return null;
   try {
-    return new TextDecoder().decode(await transformBytes(bytes, "gzip", "decompress"));
+    const body = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    return await readBoundedText({ body }, AbortSignal.timeout(10_000), SIGNAL_MAX_SDP_BYTES);
   } catch {
     return null;
   }
-}
-
-async function transformBytes(
-  bytes: Uint8Array,
-  format: CompressionFormat,
-  mode: "compress" | "decompress",
-): Promise<Uint8Array> {
-  const stream = new Blob([bytes]).stream();
-  const transformed =
-    mode === "compress"
-      ? stream.pipeThrough(new CompressionStream(format))
-      : stream.pipeThrough(new DecompressionStream(format));
-  return new Uint8Array(await new Response(transformed).arrayBuffer());
 }

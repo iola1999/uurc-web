@@ -5,10 +5,13 @@ describe("LocalProxyTransport", () => {
   it("normalizes successful JSON responses from the backend proxy", async () => {
     const fetcher = vi.fn(
       async () =>
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }),
+        new Response(
+          JSON.stringify({ status: 200, headers: { "content-type": "application/json" }, body: { ok: true } }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
     );
     const transport = new LocalProxyTransport("/api", fetcher);
 
@@ -20,8 +23,9 @@ describe("LocalProxyTransport", () => {
 
     expect(fetcher).toHaveBeenCalledWith("/api/proxy/uu", {
       body: JSON.stringify({ method: "GET", path: "/api/v1/test" }),
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-UURC-Session": expect.any(String) },
       method: "POST",
+      signal: expect.any(AbortSignal),
     });
   });
 });

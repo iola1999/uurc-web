@@ -26,7 +26,10 @@ export function decodeJwtPayload(token: string | undefined): Record<string, unkn
 
   try {
     const payload = token.split(".")[1] ?? "";
-    return JSON.parse(decodeBase64Url(payload)) as Record<string, unknown>;
+    const decoded: unknown = JSON.parse(decodeBase64Url(payload));
+    return decoded && typeof decoded === "object" && !Array.isArray(decoded)
+      ? (decoded as Record<string, unknown>)
+      : {};
   } catch {
     return {};
   }
@@ -39,9 +42,12 @@ function validateLoginState(state: Partial<LoginState> | null | undefined): stri
 export function summarizeAuthState(state: Partial<LoginState> | null | undefined): AuthStatus {
   const missingFields = validateLoginState(state);
   const payload = decodeJwtPayload(state?.token);
-  const exp = typeof payload.exp === "number" ? payload.exp : undefined;
-  const tokenExpiresAt = exp ? new Date(exp * 1000).toISOString() : undefined;
-  const tokenExpired = exp ? exp * 1000 <= Date.now() : undefined;
+  const exp =
+    typeof payload.exp === "number" && Number.isFinite(payload.exp) && Math.abs(payload.exp * 1000) <= 8.64e15
+      ? payload.exp
+      : undefined;
+  const tokenExpiresAt = exp !== undefined ? new Date(exp * 1000).toISOString() : undefined;
+  const tokenExpired = exp !== undefined ? exp * 1000 <= Date.now() : undefined;
 
   return {
     hasState: missingFields.length === 0,

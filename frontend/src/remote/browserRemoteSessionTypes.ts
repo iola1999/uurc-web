@@ -266,6 +266,7 @@ export interface BrowserRemoteSessionState {
   remoteInputDisplayId?: number;
   selectedCandidatePair?: BrowserRemoteSelectedCandidatePair;
   stage: "idle" | "controlled" | "offered" | "connected";
+  failureReason?: string;
   videoElement?: BrowserRemoteVideoElementSample;
   videoFlow?: BrowserRemoteVideoFlowDiagnostics;
 }

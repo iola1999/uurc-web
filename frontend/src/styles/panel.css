@@ -297,12 +297,33 @@
 .dialog-card {
   width: 100%;
   max-width: 440px;
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
   border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--border) 88%, white);
   background: var(--surface);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
   padding: 24px;
   will-change: transform, opacity;
+}
+
+.remote-text-input {
+  display: grid;
+  gap: 12px;
+}
+
+.remote-text-input textarea {
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  font: inherit;
+}
+
+.remote-text-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .occupied-dialog-header {
@@ -339,12 +360,15 @@
 
 .occupied-dialog-options {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 4px 0 12px;
 }
 
 .occupied-dialog-option {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   align-items: flex-start;

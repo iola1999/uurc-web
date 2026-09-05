@@ -69,6 +69,17 @@ export function useRemoteInputController({
 }: UseRemoteInputControllerOptions) {
   const [inputControlEnabled, setInputControlEnabled] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const exitFullscreen = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape" || document.querySelector('[role="dialog"]:not([aria-hidden="true"])')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setIsFullscreen(false);
+    };
+    document.addEventListener("keydown", exitFullscreen, true);
+    return () => document.removeEventListener("keydown", exitFullscreen, true);
+  }, [isFullscreen]);
   const remoteStageRef = useRef<HTMLDivElement | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
   const controlChannelOpenedRef = useRef(false);

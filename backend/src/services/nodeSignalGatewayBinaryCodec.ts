@@ -1,4 +1,5 @@
 import { gzipSync, gunzipSync } from "node:zlib";
+import { SIGNAL_MAX_SDP_BYTES } from "@uurc/shared/signalGateway/status";
 
 import type { SignalGatewayBinaryCodec } from "@uurc/shared/signalGateway/payload";
 
@@ -12,7 +13,7 @@ export const nodeSignalGatewayBinary: SignalGatewayBinaryCodec<Buffer> = {
     const buffer = toSignalBuffer(value);
     if (!buffer) return null;
     try {
-      return gunzipSync(buffer).toString("utf8");
+      return gunzipSync(buffer, { maxOutputLength: SIGNAL_MAX_SDP_BYTES }).toString("utf8");
     } catch {
       return null;
     }

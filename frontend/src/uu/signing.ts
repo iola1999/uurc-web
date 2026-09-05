@@ -95,7 +95,7 @@ function buildSignatureBase({
 async function hmacSha256Hex(input: string): Promise<string> {
   const subtle = globalThis.crypto?.subtle;
   if (!subtle) {
-    throw new Error("Web Crypto is unavailable in this browser");
+    throw new Error("当前页面无法使用安全加密，请通过 HTTPS 或 localhost 访问后重试");
   }
 
   const encoder = new TextEncoder();

@@ -1,4 +1,8 @@
 import { io, type Socket } from "socket.io-client";
+import { Agent } from "node:https";
+import { validateSignalServer } from "@uurc/shared/signalGateway/authorization";
+import { SIGNAL_MAX_FRAME_BYTES } from "@uurc/shared/signalGateway/status";
+import { lookupPublicSignalAddress } from "./signalTargetLookup.js";
 
 import type {
   SignalGatewayConnectOptions,
@@ -8,11 +12,13 @@ import type {
 } from "./signalGateway.js";
 
 type SocketIoClientFactory = (signalServer: string, options: Parameters<typeof io>[1]) => Socket;
+const signalHttpsAgent = new Agent({ lookup: lookupPublicSignalAddress });
 
 export class SocketIoSignalGatewayConnector implements SignalGatewayConnector {
   constructor(private readonly socketFactory: SocketIoClientFactory = io) {}
 
   async connect(options: SignalGatewayConnectOptions): Promise<SignalGatewayConnection> {
+    validateSignalServer(options.signalServer);
     return new Promise((resolve, reject) => {
       const socket = this.socketFactory(options.signalServer, {
         autoConnect: false,
@@ -22,6 +28,7 @@ export class SocketIoSignalGatewayConnector implements SignalGatewayConnector {
         reconnectionDelay: options.reconnectDelayMs,
         timeout: options.timeoutMs,
         transports: ["websocket"],
+        transportOptions: { websocket: { agent: signalHttpsAgent, maxPayload: SIGNAL_MAX_FRAME_BYTES } },
       });
       let settled = false;
 

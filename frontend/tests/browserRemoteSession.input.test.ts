@@ -135,7 +135,7 @@ describe("BrowserRemoteSession", () => {
       encodeStreamerTextMessage({
         sequence: 1,
         timestampMs: 2,
-        inputMessage: "mobile paste",
+        inputMessage: "  mobile paste  ",
       }),
     ]);
   });

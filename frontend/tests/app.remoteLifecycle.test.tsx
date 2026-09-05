@@ -17,6 +17,26 @@ describe("App remote lifecycle", () => {
   beforeEach(setupAppTest);
   afterEach(cleanupAppTest);
 
+  it("passes takeover in the first join request and releases the room on route unmount", async () => {
+    vi.stubGlobal("RTCPeerConnection", TestPeerConnection);
+    const user = userEvent.setup();
+    const { unmount } = render(<App />);
+    await openOfficeMacControl(user);
+    await startCompatibleConnection(user);
+    await user.click(await screen.findByRole("button", { name: /^接管控制/ }));
+    await waitFor(() =>
+      expect(uuCalls("/api/v1/room/join/by_device/desktop-1")[0]?.body).toEqual({ force_join: true }),
+    );
+    await waitFor(() =>
+      expect(appBackend.requestLog.some((call) => call.path === "/api/remote/signal/control")).toBe(true),
+    );
+    unmount();
+    await waitFor(() => expect(uuCalls("/api/v1/room/clear/by_device/desktop-1")).toHaveLength(1));
+    expect(
+      appBackend.requestLog.filter((call) => call.method === "DELETE" && call.path === "/api/remote/signal"),
+    ).toHaveLength(1);
+  });
+
   it("preserves a control page deep link while restoring login state on refresh", async () => {
     window.history.replaceState(null, "", "/devices/desktop-1/control");
 
@@ -172,7 +192,7 @@ describe("App remote lifecycle", () => {
     });
     expect(screen.queryByRole("button", { name: "打开远控画面" })).not.toBeInTheDocument();
 
-    expect(TestPeerConnection.lastConfiguration).toMatchObject({ iceTransportPolicy: "all" });
+    expect(TestPeerConnection.lastConfiguration).toMatchObject({ iceTransportPolicy: "relay" });
     expect(screen.getByRole("radio", { name: "自动路径" })).toBeChecked();
     expect(screen.getAllByText("服务端要求中转").length).toBeGreaterThan(0);
   });

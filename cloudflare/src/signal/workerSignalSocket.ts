@@ -2,6 +2,7 @@ import { STREAMER_CONTROL_EVENT_ACK_TIMEOUT_MS } from "@uurc/shared/streamer/sig
 import { normalizeSignalGatewayInboundEventsAsync } from "@uurc/shared/signalGateway/events";
 import { normalizeSignalGatewayPayload } from "@uurc/shared/signalGateway/payload";
 import type { RemoteSignalGatewayEvent } from "@uurc/shared/signalGateway/model";
+import { SIGNAL_MAX_FRAME_BYTES } from "@uurc/shared/signalGateway/status";
 
 import {
   ENGINE_IO_CLOSE,
@@ -52,10 +53,13 @@ export class WorkerSignalSocket {
   private connectAbortController: AbortController | null = null;
   private handshakeCallbacks: HandshakeCallbacks | null = null;
   private messageQueue: Promise<void> = Promise.resolve();
+  private queuedBytes = 0;
   private nextAckId = 0;
   private pendingAcks = new Map<number, PendingAck>();
   private pendingBinaryPacket: PendingBinaryPacket | null = null;
   private namespaceConnected = false;
+  private heartbeatTimer: ReturnType<typeof setTimeout> | undefined;
+  private heartbeatTimeoutMs = 45_000;
 
   connectionId: string | undefined;
 
@@ -174,6 +178,19 @@ export class WorkerSignalSocket {
   }
 
   private enqueueSocketMessage(socket: WebSocket, value: unknown): void {
+    const byteLength =
+      typeof value === "string"
+        ? new TextEncoder().encode(value).byteLength
+        : value instanceof Blob
+          ? value.size
+          : value instanceof ArrayBuffer || ArrayBuffer.isView(value)
+            ? value.byteLength
+            : 0;
+    if (byteLength > SIGNAL_MAX_FRAME_BYTES || this.queuedBytes + byteLength > 4 * SIGNAL_MAX_FRAME_BYTES) {
+      this.handleSocketError(socket, "signal message size limit exceeded");
+      return;
+    }
+    this.queuedBytes += byteLength;
     this.messageQueue = this.messageQueue
       .then(async () => {
         if (socket !== this.socket) return;
@@ -182,6 +199,9 @@ export class WorkerSignalSocket {
       .catch((error) => {
         if (socket !== this.socket) return;
         this.handleSocketError(socket, `invalid signal socket frame: ${errorMessage(error)}`);
+      })
+      .finally(() => {
+        this.queuedBytes -= byteLength;
       });
   }
 
@@ -197,11 +217,15 @@ export class WorkerSignalSocket {
 
   private async handleTextFrame(socket: WebSocket, frame: string): Promise<void> {
     if (frame.startsWith(ENGINE_IO_OPEN)) {
-      this.connectionId = parseEngineOpenPacket(frame.slice(1)).sid;
+      const opened = parseEngineOpenPacket(frame.slice(1));
+      this.connectionId = opened.sid;
+      this.heartbeatTimeoutMs = opened.pingInterval + opened.pingTimeout;
+      this.renewHeartbeat(socket);
       this.sendRaw(`${ENGINE_IO_MESSAGE}0`);
       return;
     }
     if (frame === ENGINE_IO_PING) {
+      this.renewHeartbeat(socket);
       this.sendRaw(ENGINE_IO_PONG);
       return;
     }
@@ -228,6 +252,7 @@ export class WorkerSignalSocket {
       return;
     }
     if (packet.attachments > 0) {
+      if (this.pendingBinaryPacket) throw new Error("Previous binary packet is incomplete");
       this.pendingBinaryPacket = { packet, buffers: [] };
       return;
     }
@@ -247,6 +272,8 @@ export class WorkerSignalSocket {
     }
 
     pending.buffers.push(bytes);
+    if (pending.buffers.reduce((total, buffer) => total + buffer.byteLength, 0) > SIGNAL_MAX_FRAME_BYTES)
+      throw new Error("Binary packet size limit exceeded");
     if (pending.buffers.length < pending.packet.attachments) return;
     this.pendingBinaryPacket = null;
     await this.processSocketIoPacket(socket, {
@@ -349,10 +376,20 @@ export class WorkerSignalSocket {
   }
 
   private resetProtocolState(): void {
+    if (this.heartbeatTimer !== undefined) clearTimeout(this.heartbeatTimer);
+    this.heartbeatTimer = undefined;
     this.connectionId = undefined;
     this.namespaceConnected = false;
     this.pendingBinaryPacket = null;
     this.nextAckId = 0;
+  }
+
+  private renewHeartbeat(socket: WebSocket): void {
+    if (this.heartbeatTimer !== undefined) clearTimeout(this.heartbeatTimer);
+    this.heartbeatTimer = setTimeout(
+      () => this.handleRemoteDisconnect(socket, "signal heartbeat timed out"),
+      this.heartbeatTimeoutMs,
+    );
   }
 
   private rejectPendingAcks(message: string): void {
@@ -378,6 +415,7 @@ async function openSignalWebSocket(
   }, timeoutMs);
   try {
     const response = await fetch(buildEngineIoWebSocketUrl(signalServer), {
+      redirect: "error",
       headers: { ...headers, Upgrade: "websocket" },
       signal: controller.signal,
     });

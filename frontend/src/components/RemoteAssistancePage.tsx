@@ -24,14 +24,13 @@ export function RemoteAssistancePage({
   onStart: () => void;
 }) {
   const [searchParams] = useSearchParams();
-  const appliedPrefill = useRef(false);
+  const appliedPrefill = useRef<string | null>(null);
 
-  // 命令面板“按设备 ID 连接伙伴设备…”跳转带 ?id= 时，进入本页自动带入该 ID，仅生效一次。
   useEffect(() => {
-    if (appliedPrefill.current) return;
     const prefillId = searchParams.get("id");
+    if (appliedPrefill.current === prefillId) return;
     if (prefillId) onConnectIdChange(prefillId.replace(/\D/g, ""));
-    appliedPrefill.current = true;
+    appliedPrefill.current = prefillId;
   }, [searchParams, onConnectIdChange]);
 
   return (

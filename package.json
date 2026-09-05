@@ -2,6 +2,12 @@
   "name": "uurc-web",
   "version": "0.1.0",
   "private": true,
+  "overrides": {
+    "qs": "^6.16.0",
+    "tsx": {
+      "esbuild": "^0.28.1"
+    }
+  },
   "type": "module",
   "workspaces": [
     "shared",
@@ -21,9 +27,12 @@
     "format:check": "prettier --check .",
     "test": "npm run test -w shared && npm run test -w backend && npm run test -w frontend && npm run test:cloudflare",
     "test:unit": "npm run test -w shared && npm run test -w backend && npm run test -w frontend && npm run test:cloudflare",
-    "test:cloudflare": "vitest run --config cloudflare/vitest.config.ts"
+    "test:cloudflare": "vitest run --config cloudflare/vitest.config.ts && vitest run --config cloudflare/vitest.runtime.config.ts",
+    "typecheck:cloudflare": "tsc -p cloudflare/tsconfig.json"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260905.1",
     "@eslint/js": "^9.39.4",
     "concurrently": "^9.1.2",
     "eslint": "^9.39.4",

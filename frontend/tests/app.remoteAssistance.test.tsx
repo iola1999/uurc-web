@@ -68,7 +68,8 @@ describe("App remote assistance", () => {
     await waitFor(() => {
       expect(uuCalls("/api/v2/room/share/cancel_remote_assist")).toHaveLength(1);
     });
-    expect(screen.getAllByText("已取消协助").length).toBeGreaterThan(0);
+    await screen.findByRole("heading", { name: "远控伙伴" });
+    expect(screen.getByLabelText("伙伴的设备 ID")).toHaveValue("982123456");
   });
 
   it("waits for partner confirmation when the verification code is left empty", async () => {

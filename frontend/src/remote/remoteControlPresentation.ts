@@ -115,17 +115,20 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
     (videoFlowStatus === "decode_stalled" || videoFlowStatus === "presentation_stalled") &&
     input.decodeStalledStreak >= 2;
   const browserConnectionRecoverable =
-    input.browserRemoteState.stage === "connected" &&
-    (input.controlChannelState === "closed" || videoFlowStatus === "transport_stalled" || decodeStalledPersisted);
-  const remoteRecoveryLabel = browserConnectionRecoverable
-    ? input.controlChannelState === "closed"
-      ? "控制连接已断开"
-      : decodeStalledPersisted
-        ? videoFlowStatus === "presentation_stalled"
-          ? "画面卡顿（浏览器呈现异常）"
-          : "画面卡顿（解码异常）"
-        : "画面中断（网络）"
-    : "";
+    Boolean(input.browserRemoteState.failureReason) ||
+    (input.browserRemoteState.stage === "connected" &&
+      (input.controlChannelState === "closed" || videoFlowStatus === "transport_stalled" || decodeStalledPersisted));
+  const remoteRecoveryLabel =
+    input.browserRemoteState.failureReason ||
+    (browserConnectionRecoverable
+      ? input.controlChannelState === "closed"
+        ? "控制连接已断开"
+        : decodeStalledPersisted
+          ? videoFlowStatus === "presentation_stalled"
+            ? "画面卡顿（浏览器呈现异常）"
+            : "画面卡顿（解码异常）"
+          : "画面中断（网络）"
+      : "");
   const autoReconnectLabel =
     browserConnectionRecoverable && input.autoReconnectEnabled
       ? input.autoReconnectStatus || "自动重连准备中"

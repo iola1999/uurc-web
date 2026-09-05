@@ -25,8 +25,16 @@ export function useSignalGatewayController({
   const [signalEvents, setSignalEvents] = useState<RemoteSignalGatewayEvent[]>([]);
   const [remoteSignalDiagnostics, setRemoteSignalDiagnostics] = useState<RemoteSignalReadinessDiagnostics | null>(null);
   const lastSignalEventIdRef = useRef(0);
+  const generationRef = useRef(0);
+  useEffect(
+    () => () => {
+      generationRef.current += 1;
+    },
+    [],
+  );
 
   const resetSignalEvents = useCallback(() => {
+    generationRef.current += 1;
     lastSignalEventIdRef.current = 0;
     setSignalEvents([]);
     setRemoteSignalDiagnostics(null);
@@ -40,18 +48,23 @@ export function useSignalGatewayController({
 
   const refreshSignalEvents = useCallback(
     async (session = browserSessionRef.current) => {
+      const generation = generationRef.current;
+      const isCurrent = () => generation === generationRef.current && session === browserSessionRef.current;
       const [nextEvents, diagnostics] = await Promise.all([
         getRemoteSignalEvents(lastSignalEventIdRef.current),
         getRemoteSignalDiagnostics(),
       ]);
+      if (!isCurrent()) return;
 
       if (nextEvents.length > 0) {
         lastSignalEventIdRef.current = Math.max(lastSignalEventIdRef.current, ...nextEvents.map((event) => event.id));
         setSignalEvents((current) => mergeSignalEvents(current, nextEvents));
         await session?.applySignalEvents(nextEvents);
+        if (!isCurrent()) return;
       }
       if (session) {
         await session.refreshConnectionStats();
+        if (!isCurrent()) return;
         onSessionStateChange(session.getState());
       }
       setRemoteSignalDiagnostics(diagnostics);
@@ -61,13 +74,12 @@ export function useSignalGatewayController({
   );
 
   useEffect(() => {
-    const gatewayActive = signalGatewayStatus?.status === "connected" || signalGatewayStatus?.status === "connecting";
-    if (!gatewayActive || browserStage === "idle") return;
+    if (!signalGatewayContext) return;
 
     let stopped = false;
     let syncing = false;
     const sync = async () => {
-      if (stopped || syncing || !browserSessionRef.current) return;
+      if (stopped || syncing) return;
       syncing = true;
       try {
         await refreshSignalEvents();
@@ -79,13 +91,13 @@ export function useSignalGatewayController({
     };
 
     void sync();
-    const intervalMs = browserStage === "connected" ? 1500 : 600;
+    const intervalMs = browserStage === "controlled" || browserStage === "offered" ? 600 : 1500;
     const timer = window.setInterval(sync, intervalMs);
     return () => {
       stopped = true;
       window.clearInterval(timer);
     };
-  }, [browserSessionRef, browserStage, onPollingError, refreshSignalEvents, signalGatewayStatus?.status]);
+  }, [browserSessionRef, browserStage, onPollingError, refreshSignalEvents, signalGatewayContext]);
 
   return {
     signalGatewayContext,

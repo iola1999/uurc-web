@@ -1,0 +1,267 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "body-parser": {
+      "name": "body-parser",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1123977,
+          "name": "body-parser",
+          "dependency": "body-parser",
+          "title": "body-parser vulnerable to denial of service when invalid limit value silently disables size enforcement",
+          "url": "https://github.com/advisories/GHSA-v422-hmwv-36x6",
+          "severity": "low",
+          "cwe": ["CWE-770"],
+          "cvss": {
+            "score": 3.7,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<1.20.6"
+        },
+        "qs"
+      ],
+      "effects": [],
+      "range": "<=1.20.6",
+      "nodes": ["node_modules/body-parser"],
+      "fixAvailable": true
+    },
+    "engine.io-client": {
+      "name": "engine.io-client",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": ["ws"],
+      "effects": [],
+      "range": "0.7.0 || 0.7.8 - 0.7.9 || 6.0.0 - 6.6.4",
+      "nodes": ["node_modules/engine.io-client"],
+      "fixAvailable": true
+    },
+    "express": {
+      "name": "express",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": ["qs"],
+      "effects": [],
+      "range": "4.22.2",
+      "nodes": ["node_modules/express"],
+      "fixAvailable": true
+    },
+    "qs": {
+      "name": "qs",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1119502,
+          "name": "qs",
+          "dependency": "qs",
+          "title": "qs has a remotely triggerable DoS: qs.stringify crashes with TypeError on null/undefined entries in comma-format arrays when encodeValuesOnly is set",
+          "url": "https://github.com/advisories/GHSA-q8mj-m7cp-5q26",
+          "severity": "moderate",
+          "cwe": ["CWE-476"],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=6.11.1 <=6.15.1"
+        },
+        {
+          "source": 1158506,
+          "name": "qs",
+          "dependency": "qs",
+          "title": "qs array-limit bypass via bracket-key comma parsing",
+          "url": "https://github.com/advisories/GHSA-x5fp-wj9c-mxmx",
+          "severity": "moderate",
+          "cwe": ["CWE-770"],
+          "cvss": {
+            "score": 3.7,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=6.14.2 <=6.15.3"
+        },
+        {
+          "source": 1158507,
+          "name": "qs",
+          "dependency": "qs",
+          "title": "qs: Denial of Service via Attacker Controlled isBuffer",
+          "url": "https://github.com/advisories/GHSA-4mjr-xmp4-gh2g",
+          "severity": "moderate",
+          "cwe": ["CWE-248", "CWE-703"],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": ">=2.2.5 <6.16.0"
+        }
+      ],
+      "effects": ["body-parser", "express"],
+      "range": "2.2.5 - 6.15.3",
+      "nodes": ["node_modules/qs"],
+      "fixAvailable": true
+    },
+    "react-router": {
+      "name": "react-router",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1124268,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass)",
+          "url": "https://github.com/advisories/GHSA-wrjc-x8rr-h8h6",
+          "severity": "moderate",
+          "cwe": ["CWE-601"],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=6.0.0 <7.18.0"
+        },
+        {
+          "source": 1124271,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router: RSCErrorHandler Missing Protocol Validation (XSS)",
+          "url": "https://github.com/advisories/GHSA-h8fp-f39c-q6mh",
+          "severity": "moderate",
+          "cwe": ["CWE-79"],
+          "cvss": {
+            "score": 6.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:H/I:L/A:N"
+          },
+          "range": ">=7.11.0 <7.18.0"
+        },
+        {
+          "source": 1124272,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration",
+          "url": "https://github.com/advisories/GHSA-337j-9hxr-rhxg",
+          "severity": "moderate",
+          "cwe": ["CWE-470"],
+          "cvss": {
+            "score": 6.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"
+          },
+          "range": ">=6.4.0 <7.18.0"
+        },
+        {
+          "source": 1124276,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router: Unauthenticated Denial of Service via Inefficient Route Matching",
+          "url": "https://github.com/advisories/GHSA-chx6-hx7r-mcp5",
+          "severity": "high",
+          "cwe": ["CWE-400", "CWE-407"],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=7.0.0 <7.18.0"
+        },
+        {
+          "source": 1138769,
+          "name": "react-router",
+          "dependency": "react-router",
+          "title": "React Router: RSC Mode CSRF Bypass Allows Action Execution Before 400 Response",
+          "url": "https://github.com/advisories/GHSA-qwww-vcr4-c8h2",
+          "severity": "high",
+          "cwe": ["CWE-352"],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=7.12.0 <7.18.2"
+        }
+      ],
+      "effects": [],
+      "range": "6.0.0 - 7.18.1",
+      "nodes": ["node_modules/react-router"],
+      "fixAvailable": true
+    },
+    "socket.io-parser": {
+      "name": "socket.io-parser",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1130713,
+          "name": "socket.io-parser",
+          "dependency": "socket.io-parser",
+          "title": "Socket.IO: Zero-attachment Memory Exhaustion",
+          "url": "https://github.com/advisories/GHSA-2m8v-j782-fhvr",
+          "severity": "high",
+          "cwe": ["CWE-20", "CWE-754"],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=4.0.0 <4.2.7"
+        }
+      ],
+      "effects": [],
+      "range": "4.0.0 - 4.2.6",
+      "nodes": ["node_modules/socket.io-parser"],
+      "fixAvailable": true
+    },
+    "ws": {
+      "name": "ws",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1119108,
+          "name": "ws",
+          "dependency": "ws",
+          "title": "ws: Uninitialized memory disclosure",
+          "url": "https://github.com/advisories/GHSA-58qx-3vcg-4xpx",
+          "severity": "moderate",
+          "cwe": ["CWE-908"],
+          "cvss": {
+            "score": 4.4,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": ">=8.0.0 <8.20.1"
+        },
+        {
+          "source": 1123259,
+          "name": "ws",
+          "dependency": "ws",
+          "title": "ws: Memory exhaustion DoS from tiny fragments and data chunks",
+          "url": "https://github.com/advisories/GHSA-96hv-2xvq-fx4p",
+          "severity": "high",
+          "cwe": ["CWE-400", "CWE-770", "CWE-1050"],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=8.0.0 <8.21.0"
+        }
+      ],
+      "effects": ["engine.io-client"],
+      "range": "8.0.0 - 8.20.1",
+      "nodes": ["node_modules/engine.io-client/node_modules/ws"],
+      "fixAvailable": true
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 3,
+      "critical": 0,
+      "total": 7
+    },
+    "dependencies": {
+      "prod": 114,
+      "dev": 474,
+      "optional": 134,
+      "peer": 33,
+      "peerOptional": 0,
+      "total": 587
+    }
+  }
+}

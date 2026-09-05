@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
-import { useEffect } from "react";
+import { useRef } from "react";
+import { useModalFocus } from "./useModalFocus.js";
 
 import { dialogCardVariants, dialogScrimVariants } from "../../motion/presets.js";
 
@@ -19,15 +20,6 @@ export function Dialog({
   ariaLabel: string;
   className?: string;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
   if (typeof document === "undefined") return null;
 
   return createPortal(
@@ -54,6 +46,8 @@ function DialogSurface({
   className: string;
 }) {
   const isPresent = useIsPresent();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocus(dialogRef, isPresent, onClose);
 
   return (
     <m.div
@@ -72,6 +66,8 @@ function DialogSurface({
     >
       <m.div
         className={`dialog-card ${className}`}
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}

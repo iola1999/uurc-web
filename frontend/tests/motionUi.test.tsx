@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppMotionProvider } from "../src/motion/AppMotionProvider.js";
 import { AnimatedDisclosure } from "../src/components/ui/AnimatedDisclosure.js";
@@ -43,6 +43,37 @@ function TestSegmentedControl() {
 }
 
 describe("motion UI", () => {
+  afterEach(cleanup);
+  it("contains keyboard focus and restores it when the modal closes", async () => {
+    const user = userEvent.setup();
+    function Example() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>打开</button>
+          <Dialog open={open} onClose={() => setOpen(false)} ariaLabel="焦点测试">
+            <input aria-label="第一项" />
+            <button onClick={() => setOpen(false)}>关闭</button>
+          </Dialog>
+        </>
+      );
+    }
+    render(
+      <AppMotionProvider>
+        <Example />
+      </AppMotionProvider>,
+    );
+    const opener = screen.getByRole("button", { name: "打开" });
+    await user.click(opener);
+    const first = screen.getByRole("textbox", { name: "第一项" });
+    expect(first).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(screen.getByRole("button", { name: "关闭" })).toHaveFocus();
+    await user.tab();
+    expect(first).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(opener).toHaveFocus();
+  });
   it("keeps tabs semantic while supporting arrow-key navigation", async () => {
     const user = userEvent.setup();
     render(

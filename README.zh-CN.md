@@ -46,6 +46,18 @@ npm run deploy:cloudflare
 
 ### Docker
 
+在运行 Docker 的电脑上使用 `http://localhost:8787`。其他电脑或手机访问时，需要 HTTPS 和受浏览器信任的证书；请求签名和剪贴板依赖安全上下文。通过局域网 IP 或普通 HTTP 域名访问会出现环境错误。
+
+例如，在同一台主机运行 [Caddy](https://caddyserver.com/docs/automatic-https)，将域名解析到该主机并开放 80/443 端口：
+
+```caddyfile
+remote.example.com {
+  reverse_proxy 127.0.0.1:8787
+}
+```
+
+向公网开放前，还需要单独配置访问身份验证。
+
 ```bash
 docker run -d \
   --name uurc-web \
@@ -60,7 +72,7 @@ curl -O https://raw.githubusercontent.com/iola1999/uurc-web/main/compose.yml
 docker compose up -d
 ```
 
-信令 API 会给每个浏览器标签页生成随机会话凭据，隔离不同访问者的进程内信令连接。公网实例还需要 Cloudflare Access、带身份验证的反向代理或其他访问网关。
+每个页面实例使用独立的信令会话凭据。刷新会创建新会话，伙伴协助返回验证页并保留设备 ID。网关仅允许连接该会话通过 UU 成功加入房间后获得的令牌及目标地址。浏览器连续两分钟没有访问时，网关关闭信令连接并删除临时授权和事件。公网实例还需要 Cloudflare Access、带身份验证的反向代理或其他访问网关。
 
 前端当前固定使用本地代理传输，因此 Wisp 默认关闭。只有测试可选的 WASM curl 传输时，才需要设置 `ENABLE_WISP=true`。
 
@@ -69,6 +81,8 @@ docker compose up -d
 账号登录状态保存在当前浏览器中，UU API 请求会经过你正在使用的部署。共享实例的运营方在技术上可以观察其代理的请求。请优先自行部署，公开日志和截图前移除短信验证码、账号凭证、Token、设备 ID、房间信息和网络地址。
 
 完整说明和私下报告方式见 [安全政策](SECURITY.zh-CN.md)。
+
+远控工具栏提供文字输入窗口，可使用手机软键盘和本地中文输入法。点击发送后提交文字，并保留空格与换行。
 
 ## 开发
 
@@ -88,6 +102,8 @@ docker build -t iola1999/uurc-web:local .
 - [贡献指南](CONTRIBUTING.zh-CN.md)
 - [社区行为准则](CODE_OF_CONDUCT.md#社区行为准则)
 - [安全政策](SECURITY.zh-CN.md)
+- [项目审查（2026-09-05）](docs/project-audit-2026-09-05.zh-CN.md)
+- [审查修复与验证记录](implementation-notes.md)
 
 ## 致谢
 

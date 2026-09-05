@@ -8,6 +8,7 @@ import type { CommandPaletteController } from "../controllers/useCommandPaletteC
 import { isDeviceOnline } from "../devices/deviceLabels.js";
 import { dialogCardVariants, dialogScrimVariants } from "../motion/presets.js";
 import { preloadRemoteControlRoute } from "../routeLoaders.js";
+import { useModalFocus } from "./ui/useModalFocus.js";
 
 const paletteLayoutTransition = { type: "spring" as const, stiffness: 520, damping: 40, mass: 0.7 };
 
@@ -22,6 +23,8 @@ export function CommandPalette({
   onRefresh,
 }: CommandPaletteController) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocus(dialogRef, open, () => setOpen(false));
   const firstMatch = matches[0];
 
   useEffect(() => {
@@ -49,12 +52,19 @@ export function CommandPalette({
         >
           <m.div
             className="command-palette-card"
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-label="命令面板"
             variants={dialogCardVariants}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && firstMatch) {
+              if (
+                event.key === "Enter" &&
+                event.target === inputRef.current &&
+                !event.nativeEvent.isComposing &&
+                firstMatch
+              ) {
                 event.preventDefault();
                 onSelectDevice(firstMatch.deviceId);
               }

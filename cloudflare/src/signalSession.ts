@@ -1,4 +1,9 @@
 import { DurableObject } from "cloudflare:workers";
+import {
+  isAuthorizedSignalRoom,
+  REMOTE_SESSION_IDLE_MS,
+  type SignalRoomAuthorization,
+} from "@uurc/shared/signalGateway/authorization";
 import { analyzeRemoteSignalReadiness } from "@uurc/shared/streamer/readiness";
 import {
   STREAMER_CONTROL_EVENT_ACK_TIMEOUT_MS,
@@ -43,6 +48,7 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
   private nextSignalRequestSequence = 0;
   private authoritativeSignalRequestSequence = 0;
   private activeSignalGeneration = 0;
+  private clientExpiresAt = 0;
 
   constructor(ctx: DurableObjectState, env: SignalSessionEnv) {
     super(ctx, env);
@@ -51,10 +57,12 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
       this.store.initialize();
       this.status = this.store.readStatus() ?? createIdleSignalGatewayStatus();
       if (!this.store.readStatus()) this.store.writeStatus(this.status);
+      this.clientExpiresAt = (await ctx.storage.get<number>("clientExpiresAt")) ?? 0;
     });
   }
 
   async getStatus(): Promise<RemoteSignalGatewayStatus> {
+    await this.renewClientLease();
     const status = this.readStatus();
     if (status.status === "connected" && !this.signalSocket?.connected) {
       return this.setStatus({
@@ -69,6 +77,7 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
   }
 
   async getEvents(afterEventId = 0): Promise<RemoteSignalGatewayEvent[]> {
+    await this.renewClientLease();
     return this.store.readEvents(afterEventId);
   }
 
@@ -81,6 +90,14 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
 
   async start(input: RemoteSignalGatewayStartRequest = {}): Promise<RemoteSignalGatewayStatus> {
     const requestSequence = ++this.nextSignalRequestSequence;
+    const authorization = await this.ctx.storage.get<SignalRoomAuthorization>("roomAuthorization");
+    if (!isAuthorizedSignalRoom(authorization, input.roomConfig)) {
+      return {
+        ...createIdleSignalGatewayStatus(),
+        status: "error",
+        error: "Join the room through this gateway before starting its signal connection",
+      };
+    }
     const roomConfig = normalizeSignalGatewayRoomConfig(input.roomConfig);
     if (!roomConfig) {
       return {
@@ -91,6 +108,8 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
       };
     }
 
+    if (requestSequence < this.authoritativeSignalRequestSequence) return this.readStatus();
+    await this.renewClientLease();
     if (requestSequence < this.authoritativeSignalRequestSequence) return this.readStatus();
     this.authoritativeSignalRequestSequence = requestSequence;
     const generation = ++this.activeSignalGeneration;
@@ -153,14 +172,46 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
     ++this.activeSignalGeneration;
     this.closeSocket();
     this.store.clearEvents();
-    return this.setStatus({
+    this.rawHeaders = {};
+    this.clientExpiresAt = 0;
+    const status = this.setStatus({
       ...createIdleSignalGatewayStatus(),
       status: "closed",
       updatedAt: new Date().toISOString(),
     });
+    await this.ctx.storage.delete(["roomAuthorization", "clientExpiresAt"]);
+    await this.ctx.storage.deleteAlarm();
+    return status;
+  }
+
+  async authorizeRoom(authorization: SignalRoomAuthorization): Promise<void> {
+    await this.ctx.storage.put("roomAuthorization", authorization);
+    this.clientExpiresAt = Date.now() + REMOTE_SESSION_IDLE_MS;
+    await this.renewClientLease();
+  }
+
+  async alarm(): Promise<void> {
+    if (this.clientExpiresAt > Date.now()) {
+      await this.ctx.storage.setAlarm(this.clientExpiresAt);
+      return;
+    }
+    await this.stop();
+  }
+
+  private async renewClientLease(): Promise<void> {
+    this.store.pruneEvents();
+    if (!this.clientExpiresAt) return;
+    if (this.clientExpiresAt <= Date.now()) {
+      await this.stop();
+      return;
+    }
+    this.clientExpiresAt = Date.now() + REMOTE_SESSION_IDLE_MS;
+    await this.ctx.storage.put("clientExpiresAt", this.clientExpiresAt);
+    await this.ctx.storage.setAlarm(this.clientExpiresAt);
   }
 
   async sendControl(input: RemoteSignalControlRequest): Promise<RemoteSignalControlResult | null> {
+    await this.renewClientLease();
     const socket = this.connectedSocket();
     const generation = this.activeSignalGeneration;
     if (!socket) return null;
@@ -195,6 +246,7 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
   }
 
   async sendSoac(input: RemoteSignalSoacRequest): Promise<RemoteSignalSoacResult | null> {
+    await this.renewClientLease();
     const socket = this.connectedSocket();
     const generation = this.activeSignalGeneration;
     if (!socket) return null;

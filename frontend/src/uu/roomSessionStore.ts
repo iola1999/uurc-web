@@ -10,10 +10,14 @@ import type {
   RoomJoinUpstreamSummary,
 } from "@uurc/shared/roomSession";
 import type { UuResponse } from "@uurc/shared/uuTransport";
+import { getRemoteSessionId } from "../api/remoteSession.js";
+import { getStoredLoginState } from "./loginStateStore.js";
 
 const ROOM_SESSION_KEY = "uurc.latestRoomSession";
 
 interface BrowserRoomSession {
+  sessionId: string;
+  userId: string | undefined;
   capturedAt: string;
   joinContext: RemoteRoomJoinContext;
   roomConfig: StreamerRoomConfig;
@@ -68,6 +72,8 @@ function saveRoomSessionResult(input: { upstream: UuResponse; joinContext: Remot
 
   if (roomConfig) {
     const session: BrowserRoomSession = {
+      sessionId: getRemoteSessionId(),
+      userId: getStoredLoginState()?.userId,
       capturedAt: input.joinContext.capturedAt,
       joinContext: input.joinContext,
       roomConfig,
@@ -95,6 +101,15 @@ export function getRoomSession(): BrowserRoomSession | null {
 
   try {
     const parsed = JSON.parse(raw) as BrowserRoomSession;
+    if (
+      parsed.sessionId !== getRemoteSessionId() ||
+      parsed.userId !== getStoredLoginState()?.userId ||
+      !Number.isFinite(Date.parse(parsed.capturedAt)) ||
+      Date.now() - Date.parse(parsed.capturedAt) > 24 * 60 * 60 * 1000
+    ) {
+      clearRoomSession();
+      return null;
+    }
     if (!parsed.roomConfig?.token || !parsed.roomConfig.signalServers?.length) return null;
     return parsed;
   } catch {

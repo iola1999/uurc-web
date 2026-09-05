@@ -27,6 +27,19 @@ export function useBrowserRemoteSessionController() {
   const archivedDebugEventsRef = useRef<BrowserRemoteDebugEvent[]>([]);
   const [state, setState] = useState<BrowserRemoteSessionState>(createIdleBrowserRemoteState);
 
+  useEffect(() => {
+    const session = sessionRef.current;
+    const waitingForAnswer = state.stage === "controlled" || state.stage === "offered";
+    const waitingForMedia =
+      state.stage === "connected" && (state.remoteTrackCount === 0 || state.videoFlow?.status === "waiting");
+    if (!session || (!waitingForAnswer && !waitingForMedia)) return;
+    const timer = window.setTimeout(() => {
+      if (sessionRef.current === session)
+        session.fail(waitingForAnswer ? "媒体协商超时，请重新连接" : "等待远端画面超时，请重新连接");
+    }, 20_000);
+    return () => window.clearTimeout(timer);
+  }, [state.stage, state.appControlId, state.remoteTrackCount, state.videoFlow?.status]);
+
   useEffect(
     () => () => {
       const closedState = sessionRef.current?.close();
@@ -77,6 +90,7 @@ export function useBrowserRemoteSessionController() {
       gzipSdp: input.gzipSdp,
       targetPlatform: input.targetPlatform,
     });
+    if (sessionRef.current !== session) throw new DOMException("Connection was closed", "AbortError");
     setState(sessionState);
     return session;
   }

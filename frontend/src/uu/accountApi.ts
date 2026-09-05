@@ -20,7 +20,7 @@ import {
 } from "./loginStateStore.js";
 import { createSyntheticAndroidProfile } from "./profile.js";
 import { clearRoomSession } from "./roomSessionStore.js";
-import { signedUuRequest } from "./uuTransportClient.js";
+import { signedUuRequest, assertUuSuccess as assertUpstreamOk } from "./uuTransportClient.js";
 
 export function getAuthStatus(): AuthStatus {
   return getStoredAuthStatus();
@@ -109,22 +109,4 @@ function normalizeMobileLoginInput(input: { regionCode: string; mobile: string; 
   const code = input.code.trim();
   if (!code) throw new Error("code is required");
   return { ...normalized, code };
-}
-
-function assertUpstreamOk(body: unknown): void {
-  if (!isRecord(body)) return;
-  const code = body.code;
-  if (typeof code === "number" && code !== 0) {
-    const message =
-      typeof body.msg === "string"
-        ? body.msg
-        : typeof body.message === "string"
-          ? body.message
-          : `UU upstream code ${code}`;
-    throw new Error(message);
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

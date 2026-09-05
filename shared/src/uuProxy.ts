@@ -40,3 +40,37 @@ export function parseMaybeJsonBody(text: string, contentType: string): unknown {
     return text;
   }
 }
+
+export async function readBoundedText(
+  source: { body: ReadableStream<Uint8Array> | null },
+  signal?: AbortSignal,
+  maxBytes = 4 * 1024 * 1024,
+): Promise<string> {
+  signal?.throwIfAborted();
+  if (!source.body) return "";
+  const reader = source.body.getReader();
+  const decoder = new TextDecoder();
+  let length = 0;
+  let text = "";
+  const abort = () => {
+    void reader.cancel().catch(() => undefined);
+  };
+  signal?.addEventListener("abort", abort, { once: true });
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      signal?.throwIfAborted();
+      if (done) break;
+      length += value.byteLength;
+      if (length > maxBytes) {
+        void reader.cancel().catch(() => undefined);
+        throw new Error(`Response exceeds ${maxBytes} bytes`);
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    return text + decoder.decode();
+  } finally {
+    signal?.removeEventListener("abort", abort);
+    reader.releaseLock();
+  }
+}

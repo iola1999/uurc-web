@@ -10,6 +10,7 @@ import {
   redactSignalGatewayToken,
   SIGNAL_GATEWAY_EVENT_RETENTION_MS,
   SIGNAL_GATEWAY_MAX_EVENTS,
+  SIGNAL_MAX_EVENT_BYTES,
 } from "@uurc/shared/signalGateway/status";
 import { normalizeSignalGatewayInboundEvents } from "@uurc/shared/signalGateway/events";
 import type {
@@ -367,6 +368,14 @@ export class RemoteControlService {
     this.signalEvents = [...this.signalEvents, record]
       .filter((event) => Date.parse(event.receivedAt) >= Date.now() - SIGNAL_GATEWAY_EVENT_RETENTION_MS)
       .slice(-SIGNAL_GATEWAY_MAX_EVENTS);
+    let retainedBytes = 0;
+    let startIndex = this.signalEvents.length;
+    while (startIndex > 0) {
+      retainedBytes += Buffer.byteLength(JSON.stringify(this.signalEvents[startIndex - 1]));
+      if (retainedBytes > SIGNAL_MAX_EVENT_BYTES) break;
+      startIndex -= 1;
+    }
+    this.signalEvents = this.signalEvents.slice(startIndex);
     console.log(`signal event ${summarizeSignalEventForLog(record)}`);
     return record;
   }
