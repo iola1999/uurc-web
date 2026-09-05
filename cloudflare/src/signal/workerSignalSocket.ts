@@ -415,10 +415,14 @@ async function openSignalWebSocket(
   }, timeoutMs);
   try {
     const response = await fetch(buildEngineIoWebSocketUrl(signalServer), {
-      redirect: "error",
+      redirect: "manual",
       headers: { ...headers, Upgrade: "websocket" },
       signal: controller.signal,
     });
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw new Error(`signal server redirect is not allowed status=${response.status}`);
+    }
     const socket = response.webSocket;
     if (!socket) throw new Error(`server did not accept websocket status=${response.status}`);
     socket.binaryType = "arraybuffer";

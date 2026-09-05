@@ -74,8 +74,12 @@ async function handleUuProxy(request: Request, env: Env): Promise<Response> {
         headers: sanitizeUuProxyHeaders(body.headers),
         body: body.body === undefined ? undefined : JSON.stringify(body.body),
         signal: controller.signal,
-        redirect: "error",
+        redirect: "manual",
       });
+      if (response.status >= 300 && response.status < 400) {
+        await response.body?.cancel();
+        throw new Error(`UU API redirect is not allowed status=${response.status}`);
+      }
       const responseText = await readBoundedText(response, controller.signal);
       const contentType = response.headers.get("content-type") ?? "";
       const upstreamBody = parseMaybeJsonBody(responseText, contentType);

@@ -50,6 +50,8 @@ Changes to the Node gateway should include backend tests. Changes to Worker sign
 
 `npm test` includes the Worker runtime suite under `cloudflare/tests/runtime/`. It exercises HTTP routing, SQLite storage, alarms, object reconstruction, and concurrent lifecycle operations locally with synthetic data.
 
+When testing Worker request options and redirects, keep the native `fetch` and supply synthetic responses through Miniflare's `outboundService`. Replacing the global `fetch` skips the runtime's request validation.
+
 ## Commit messages
 
 Use an English Conventional Commit subject:

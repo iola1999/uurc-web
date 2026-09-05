@@ -50,6 +50,8 @@ Node 网关改动应补充 backend 测试，Worker 信令改动应补充 Cloudfl
 
 `npm test` 包含 `cloudflare/tests/runtime/` 中的 Worker 运行时测试，使用合成数据在本地检查 HTTP 路由、SQLite、alarm、实例重建和并发启停。
 
+验证 Worker 请求参数和重定向行为时，保留原生 `fetch`，通过 Miniflare 的 `outboundService` 提供合成响应。替换全局 `fetch` 会跳过运行时的请求校验。
+
 ## 提交信息
 
 提交标题使用英文 Conventional Commits 格式：
