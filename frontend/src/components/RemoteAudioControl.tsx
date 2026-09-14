@@ -48,7 +48,7 @@ export function RemoteAudioControl({
         disabled={!available}
         onClick={resumeRequired ? onResumePlayback : onToggleMuted}
       >
-        <Icon size={17} />
+        <Icon size={14} />
       </button>
       <input
         className="remote-volume-slider"

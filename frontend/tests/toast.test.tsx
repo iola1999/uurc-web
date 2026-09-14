@@ -17,14 +17,14 @@ describe("Toast", () => {
     vi.unstubAllGlobals();
   });
 
-  it("places remote feedback above a toolbar docked at the bottom of the stage", async () => {
+  it("places remote feedback above the toolbar when the toolbar sits near the stage bottom", async () => {
     vi.stubGlobal("innerWidth", 1200);
     vi.stubGlobal("innerHeight", 800);
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
       if (this.classList.contains("control-stage-frame")) {
         return rectFrom({ left: 0, top: 48, width: 1122, height: 752 });
       }
-      if (this.classList.contains("control-command-bar")) {
+      if (this.classList.contains("command-dock")) {
         return rectFrom({ left: 522, top: 743, width: 592, height: 49 });
       }
       if (this.classList.contains("app-toast")) {
@@ -36,7 +36,7 @@ describe("Toast", () => {
     renderWithMotion(
       <>
         <div className="control-stage-frame">
-          <div className="control-command-bar" />
+          <div className="command-dock" />
         </div>
         <Toast toast={{ id: 1, message: "剪贴板已同步到远端" }} onDismiss={vi.fn()} placement="remote" />
       </>,
@@ -57,7 +57,7 @@ describe("Toast", () => {
       if (this.classList.contains("control-stage-frame")) {
         return rectFrom({ left: 0, top: 0, width: 320, height: 100 });
       }
-      if (this.classList.contains("control-command-bar")) {
+      if (this.classList.contains("command-dock")) {
         return rectFrom({ left: 8, top: 25, width: 304, height: 49 });
       }
       if (this.classList.contains("app-toast")) {
@@ -69,7 +69,7 @@ describe("Toast", () => {
     renderWithMotion(
       <>
         <div className="control-stage-frame">
-          <div className="control-command-bar" />
+          <div className="command-dock" />
         </div>
         <Toast toast={{ id: 1, message: "已断开远控连接" }} onDismiss={vi.fn()} placement="remote" />
       </>,

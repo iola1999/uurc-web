@@ -92,7 +92,7 @@
   }
 
   .control-command-bar {
-    max-width: calc(100% - 16px);
+    max-width: 100%;
     flex-wrap: nowrap;
     justify-content: flex-start;
     overflow-x: auto;

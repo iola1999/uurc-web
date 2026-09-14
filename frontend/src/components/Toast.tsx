@@ -87,7 +87,7 @@ function ToastItem({
 
     const updatePosition = () => {
       const element = toastRef.current;
-      const toolbar = document.querySelector<HTMLElement>(".control-command-bar");
+      const toolbar = document.querySelector<HTMLElement>(".command-dock");
       if (!element || !toolbar) {
         setPosition(null);
         return;
@@ -178,7 +178,7 @@ function ToastItem({
       if (animationFrame) cancelAnimationFrame(animationFrame);
       animationFrame = requestAnimationFrame(updatePosition);
     };
-    const toolbar = document.querySelector<HTMLElement>(".control-command-bar");
+    const toolbar = document.querySelector<HTMLElement>(".command-dock");
     const stage = toolbar?.closest<HTMLElement>(".control-stage-frame");
     const mutationObserver =
       typeof MutationObserver === "function" && toolbar ? new MutationObserver(scheduleUpdate) : undefined;

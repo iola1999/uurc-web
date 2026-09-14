@@ -148,9 +148,9 @@ export function RemoteShortcutMenu({ disabled, platformKey, onOpenChange, onRemo
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary>
-        <Keyboard size={17} />
+        <Keyboard size={14} />
         快捷键
-        <ChevronDown className="shortcut-menu-chevron" size={15} />
+        <ChevronDown className="shortcut-menu-chevron" size={12} />
       </summary>
       <div
         className="shortcut-menu-panel"

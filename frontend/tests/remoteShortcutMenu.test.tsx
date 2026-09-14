@@ -14,8 +14,9 @@ describe("RemoteShortcutMenu", () => {
 
   it("opens upward when the toolbar is near the bottom", async () => {
     const user = userEvent.setup();
+    const onOpenChange = vi.fn();
     const { container } = render(
-      <RemoteShortcutMenu disabled={false} platformKey="mac" onOpenChange={vi.fn()} onRemoteShortcut={vi.fn()} />,
+      <RemoteShortcutMenu disabled={false} platformKey="mac" onOpenChange={onOpenChange} onRemoteShortcut={vi.fn()} />,
     );
     const details = container.querySelector("details") as HTMLDetailsElement;
     const summary = container.querySelector("summary") as HTMLElement;
@@ -33,6 +34,8 @@ describe("RemoteShortcutMenu", () => {
     await user.click(summary);
 
     await waitFor(() => expect(details).toHaveAttribute("data-placement", "up"));
+    // 工具栏靠这个上报判断菜单是否打开：打开期间不能自动收起，否则面板会跟着消失。
+    expect(onOpenChange).toHaveBeenLastCalledWith(true);
   });
 
   it("opens downward when there is more room below the toolbar", async () => {

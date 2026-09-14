@@ -1,65 +1,69 @@
-.command-dock-tab,
-.command-drag-handle {
-  touch-action: none;
-}
-
-.control-command-bar {
-  /* 默认停靠在画面顶部居中。折叠态与展开态共用「水平中心 + 顶边」这一个锚点，
-     收起和展开只改变宽度，位置不会跳动；拖动后切到 fixed 视口坐标，可停到顶栏等画面之外的位置。 */
+/* 停靠点固定在画面顶部居中。箭头单独占一行且始终存在，展开时工具条在它下方长出，
+   光标底下的元素在展开前后保持同一个。 */
+.command-dock {
   position: absolute;
-  top: 10px;
+  top: 6px;
   left: 50%;
-  /* transform 承担定位，不要把它加进 transition：首次拖动时内联样式从 CSS 值切到
-     另一个值会被补间，工具栏会先闪到左边再弹回指针位置。 */
   transform: translateX(-50%);
   z-index: 5;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  max-width: calc(100% - 16px);
+  /* 容器宽度等于工具条宽度，箭头两侧那圈是透明的：整体放行指针事件，
+     只在箭头和工具条上接收，否则会挡住画面点击，鼠标划过画面顶部还会误触展开。 */
+  pointer-events: none;
+}
+
+.command-dock-tab,
+.control-command-bar {
+  pointer-events: auto;
+}
+
+/* 折叠后只剩这一个小箭头，鼠标移入或点击展开工具条。 */
+.command-dock-tab {
+  flex: 0 0 auto;
+  width: 30px;
+  min-height: 18px;
+  padding: 0;
+  border: 1px solid var(--dark-border);
+  border-radius: var(--radius-sm);
+  background: var(--dark-toolbar-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.32);
+  color: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
+}
+
+.command-dock-tab:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.control-command-bar {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   width: max-content;
-  max-width: calc(100% - 32px);
-  gap: 4px;
+  max-width: calc(100vw - 24px);
+  gap: 3px;
   margin: 0;
   border: 1px solid var(--dark-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--dark-toolbar-bg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.36);
   color: #ffffff;
-  padding: 5px;
+  padding: 3px;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   overflow: visible;
   touch-action: pan-x;
-}
-
-/* 折叠态只剩一个贴住锚点的小箭头，鼠标移入或点击即展开。
-   hover 反馈落在外层这一小条上，箭头自身不描边，避免两层边框叠在一起。 */
-.control-command-bar--collapsed {
-  gap: 0;
-  padding: 2px;
-  border-radius: var(--radius);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-}
-
-.control-command-bar--collapsed:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(42, 42, 48, 0.96);
-}
-
-.control-command-bar--collapsed .command-dock-tab,
-.control-command-bar--collapsed .command-dock-tab:hover:not(:disabled) {
-  width: 34px;
-  min-height: 20px;
-  padding: 0;
-  border-color: transparent;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  cursor: grab;
-}
-
-.control-command-bar--collapsed .command-dock-tab:active {
-  cursor: grabbing;
 }
 
 .fullscreen-hint {
@@ -77,31 +81,14 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-}
-
-.command-drag-handle {
-  width: 34px;
-  padding: 0;
-  cursor: grab;
-}
-
-.command-drag-handle:active {
-  cursor: grabbing;
-}
-
-/* 收起按钮压在工具栏末端，颜色弱一档，避免和远控操作按钮抢注意力。 */
-.control-command-bar .command-collapse-button {
-  width: 30px;
-  padding: 0;
-  color: rgba(255, 255, 255, 0.55);
+  gap: 3px;
 }
 
 /* 顶部悬浮重连恢复条：画面保留最后一帧，恢复条居中浮在其上。
-   默认停靠在画面顶部的工具栏占据 10px~60px，恢复条排在它下面，两者不会互相盖住。 */
+   顶部停靠点占 6px~61px，未连接时工具条多一行操作说明会到约 79px，恢复条排在两者之下。 */
 .reconnect-banner {
   position: absolute;
-  top: 68px;
+  top: 88px;
   left: 50%;
   translate: -50% 0;
   transform-origin: center top;
@@ -160,7 +147,10 @@
 
 .control-command-bar button,
 .shortcut-menu > summary {
-  min-height: 38px;
+  min-height: 26px;
+  padding: 0 8px;
+  gap: 5px;
+  font-size: 12px;
   border-color: transparent;
   background: transparent;
   color: rgba(255, 255, 255, 0.88);
