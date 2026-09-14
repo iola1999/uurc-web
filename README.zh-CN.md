@@ -24,6 +24,7 @@ Cloudflare Worker + Durable Object 是较方便的自部署方式。Worker 负�
 - 设备列表
 - 远控画面、声音、输入与剪贴板同步
 - 多屏切换、连接诊断与自动重连
+- 客户端指纹预设与服务端路由决策调试信息
 - 伙伴远程协助与接管控制
 - 账号管理
 - Node 与 Cloudflare 两套 UU API / 信令网关

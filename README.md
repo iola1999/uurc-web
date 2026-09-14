@@ -24,6 +24,7 @@ The public landing page is prerendered during the frontend build so its content 
 - Device list
 - Remote video, audio, input, and clipboard synchronization
 - Multi-display selection, connection diagnostics, and recovery
+- Client fingerprint presets and server routing-decision diagnostics
 - Partner assistance and takeover control
 - Account management
 - Node and Cloudflare gateways for UU API and signal traffic
