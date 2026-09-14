@@ -233,6 +233,11 @@ describe("App remote lifecycle", () => {
     expect(TestPeerConnection.lastConfiguration).toMatchObject({ iceTransportPolicy: "relay" });
     expect(screen.getByRole("radio", { name: "自动路径" })).toBeChecked();
     expect(screen.getAllByText("服务端要求中转").length).toBeGreaterThan(0);
+    // 调试面板展示服务端路由决策数据与当前生效指纹
+    expect(screen.getAllByText(/force_relay=是/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/streamer=V4\.6\.0/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("radio", { name: "默认" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "旧版 4.23" })).not.toBeChecked();
   });
 
   it("auto-enables remote input control once the control channel opens", async () => {
