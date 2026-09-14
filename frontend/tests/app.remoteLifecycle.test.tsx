@@ -9,6 +9,7 @@ import {
   getPrimaryAction,
   openAdvancedSettings,
   openOfficeMacControl,
+  openSettingsTab,
   startCompatibleConnection,
 } from "./appTestActions.js";
 import { App, cleanupAppTest, setupAppTest } from "./appTestEnvironment.js";
@@ -323,6 +324,44 @@ describe("App remote lifecycle", () => {
       { timeout: 2500 },
     );
     expect(uuCalls("/api/v1/room/join/by_device/desktop-1")).toHaveLength(1);
+  });
+
+  it("ends the connection flow when the operator disconnects during the reconnect wait", async () => {
+    vi.stubGlobal("RTCPeerConnection", TestPeerConnection);
+    appBackend.currentParticipants = [];
+    const user = userEvent.setup();
+    render(<App />);
+
+    await openOfficeMacControl(user);
+    await startCompatibleConnection(user);
+    await waitFor(() => {
+      expect(appBackend.requestLog.filter((call) => call.path === "/api/remote/signal/control")).toHaveLength(1);
+    });
+
+    // 连上之后才打开「进入设备自动连接」：自动连接还没为这台设备跑过，
+    // 断开后页面状态又回到「刚进设备、尚未连接」，这时它不能自己把会话拉起来。
+    await openSettingsTab(user);
+    await user.click(screen.getByRole("checkbox", { name: "进入设备自动连接" }));
+
+    TestPeerConnection.closeDataChannel("CONTROL_DATA_CHANNEL");
+    await screen.findByText(/控制连接已断开/);
+
+    // 自动重连还在等待窗口里，这时手动断开应当结束整个连接流程。
+    await user.click(screen.getByRole("button", { name: "断开" }));
+    await waitFor(() => {
+      expect(appBackend.requestLog.some((call) => call.method === "DELETE" && call.path === "/api/remote/signal")).toBe(
+        true,
+      );
+    });
+    expect(screen.getAllByText("已断开远控连接").length).toBeGreaterThan(0);
+
+    // 等过自动重连原本的排期时间，连接不能自己恢复。
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    expect(appBackend.requestLog.filter((call) => call.path === "/api/remote/signal/control")).toHaveLength(1);
+    expect(appBackend.requestLog.filter((call) => call.path === "/api/remote/signal/start")).toHaveLength(1);
+    expect(uuCalls("/api/v1/room/join/by_device/desktop-1")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "断开" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/控制连接已断开/)).not.toBeInTheDocument();
   });
 
   it("shows a first-class disconnect action that closes the browser remote session", async () => {

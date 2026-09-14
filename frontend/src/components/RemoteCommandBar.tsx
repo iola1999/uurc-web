@@ -61,7 +61,7 @@ export function RemoteCommandBar({
   const connected = controlChannelState === "open";
   // 未连接时「开始连接」主操作按钮就在工具栏里，收起会让用户找不到入口，
   // 而此时画面还是占位图，本来也没有内容被遮挡。连上之后画面铺满，才按空闲计时收起。
-  const { collapsed, expand, dockProps } = useCollapsibleToolbar({
+  const { collapsed, toggle, dockProps } = useCollapsibleToolbar({
     holdOpen: !connected || shortcutMenuOpen || textOpen,
   });
 
@@ -72,9 +72,9 @@ export function RemoteCommandBar({
       <button
         className="command-dock-tab"
         type="button"
-        aria-label="展开远控工具栏"
+        aria-label="远控工具栏"
         aria-expanded={!collapsed}
-        onClick={expand}
+        onClick={toggle}
       >
         {collapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
       </button>

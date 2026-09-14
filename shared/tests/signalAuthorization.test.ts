@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { authorizeUuRoom, isAuthorizedSignalRoom, validateSignalServer } from "../src/signalGateway/authorization.js";
+import {
+  authorizeUuRoom,
+  isAuthorizedSignalRoom,
+  isResolvableSignalAddress,
+  validateSignalServer,
+} from "../src/signalGateway/authorization.js";
 
 describe("signal target authorization", () => {
   it.each([
@@ -28,5 +33,27 @@ describe("signal target authorization", () => {
     expect(authorizeUuRoom(path, 401, body)).toBeNull();
     expect(authorizeUuRoom("/api/v1/other", 200, body)).toBeNull();
     expect(authorizeUuRoom(path, 200, { ...body, code: 1 })).toBeNull();
+  });
+});
+
+describe("signal DNS resolution guard", () => {
+  it.each(["8.8.8.8", "42.186.98.140"])("accepts public address %s", (address) => {
+    expect(isResolvableSignalAddress(address)).toBe(true);
+  });
+
+  // Surge/Clash 等代理 fake-IP 模式的解析结果,TUN 接管下连接它等价于连接真实服务器
+  it("accepts proxy fake-IP resolutions in 198.18.0.0/15", () => {
+    expect(isResolvableSignalAddress("198.18.254.63")).toBe(true);
+  });
+
+  it.each(["127.0.0.1", "10.0.0.1", "192.168.1.1", "172.16.0.1", "169.254.169.254", "::1"])(
+    "rejects internal address %s",
+    (address) => {
+      expect(isResolvableSignalAddress(address)).toBe(false);
+    },
+  );
+
+  it("keeps fake-IP literals out of signal server configuration", () => {
+    expect(() => validateSignalServer("wss://198.18.254.63")).toThrow();
   });
 });

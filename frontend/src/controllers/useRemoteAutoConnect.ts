@@ -11,6 +11,7 @@ interface RemoteAutoConnectOptions {
   loggedIn: boolean;
   occupiedByOthers: boolean;
   remoteAssistanceActive: boolean;
+  resumeAllowed: boolean;
   selectedDeviceExists: boolean;
   selectedDeviceId: string;
   selectedDeviceIsCurrentAuthDevice: boolean;
@@ -26,6 +27,7 @@ export function useRemoteAutoConnect(options: RemoteAutoConnectOptions): void {
   useEffect(() => {
     if (
       !options.autoConnect ||
+      !options.resumeAllowed ||
       !options.loggedIn ||
       !options.selectedDeviceId ||
       options.selectedDeviceIsCurrentAuthDevice ||
@@ -49,6 +51,7 @@ export function useRemoteAutoConnect(options: RemoteAutoConnectOptions): void {
     options.loggedIn,
     options.occupiedByOthers,
     options.remoteAssistanceActive,
+    options.resumeAllowed,
     options.selectedDeviceExists,
     options.selectedDeviceId,
     options.selectedDeviceIsCurrentAuthDevice,

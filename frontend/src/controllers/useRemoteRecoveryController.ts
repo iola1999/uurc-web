@@ -33,6 +33,8 @@ interface RemoteRecoveryOptions {
   controlChannelState: RTCDataChannelState;
   roomJoinedForSelectedDevice: boolean;
   signalGatewayMatchesRoom: boolean;
+  // 用户主动断开后为 false：连接流程已结束，不再排期新的自动重连。
+  resumeAllowed: boolean;
   onReconnect(attemptCount: number): Promise<void>;
 }
 
@@ -95,7 +97,12 @@ export function useRemoteRecoveryController(options: RemoteRecoveryOptions) {
       setStatus("");
       return;
     }
-    if (!options.autoReconnectEnabled || options.busy !== null || !options.roomJoinedForSelectedDevice) {
+    if (
+      !options.autoReconnectEnabled ||
+      !options.resumeAllowed ||
+      options.busy !== null ||
+      !options.roomJoinedForSelectedDevice
+    ) {
       return;
     }
     if (stopped) {
@@ -123,6 +130,7 @@ export function useRemoteRecoveryController(options: RemoteRecoveryOptions) {
     canRecover,
     options.autoReconnectEnabled,
     options.busy,
+    options.resumeAllowed,
     options.roomJoinedForSelectedDevice,
     options.signalGatewayMatchesRoom,
     stopped,

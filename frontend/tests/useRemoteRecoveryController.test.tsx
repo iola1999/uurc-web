@@ -29,6 +29,7 @@ describe("useRemoteRecoveryController", () => {
             controlChannelState: "closed",
             roomJoinedForSelectedDevice: joined,
             signalGatewayMatchesRoom: false,
+            resumeAllowed: true,
             onReconnect: reconnect,
           }),
         {
@@ -75,6 +76,7 @@ describe("useRemoteRecoveryController", () => {
             controlChannelState: "open",
             roomJoinedForSelectedDevice: true,
             signalGatewayMatchesRoom: true,
+            resumeAllowed: true,
             onReconnect: vi.fn(),
           }),
         {
@@ -119,6 +121,7 @@ describe("useRemoteRecoveryController", () => {
           controlChannelState: "closed",
           roomJoinedForSelectedDevice: true,
           signalGatewayMatchesRoom: false,
+          resumeAllowed: true,
           onReconnect: reconnect,
         }),
       );
@@ -150,6 +153,39 @@ describe("useRemoteRecoveryController", () => {
     }
   });
 
+  it("drops a scheduled reconnect once the operator ends the session", async () => {
+    vi.useFakeTimers();
+    try {
+      const reconnect = vi.fn(async () => {});
+      const { rerender } = renderHook(
+        ({ resumeAllowed }: { resumeAllowed: boolean }) =>
+          useRemoteRecoveryController({
+            autoReconnectEnabled: true,
+            browserRemoteState: createState({ status: "transport_stalled", updatedAtMs: 1000 }),
+            busy: null,
+            controlChannelState: "closed",
+            roomJoinedForSelectedDevice: true,
+            signalGatewayMatchesRoom: false,
+            resumeAllowed,
+            onReconnect: reconnect,
+          }),
+        { initialProps: { resumeAllowed: true } },
+      );
+
+      // 首次间隔 900 毫秒，推进到一半时用户手动断开。
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+      });
+      rerender({ resumeAllowed: false });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000);
+      });
+      expect(reconnect).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("stops auto reconnect after ten consecutive attempts and keeps the manual path", async () => {
     vi.useFakeTimers();
     try {
@@ -162,6 +198,7 @@ describe("useRemoteRecoveryController", () => {
           controlChannelState: "closed",
           roomJoinedForSelectedDevice: true,
           signalGatewayMatchesRoom: false,
+          resumeAllowed: true,
           onReconnect: reconnect,
         }),
       );

@@ -18,6 +18,21 @@ export function isPublicSignalAddress(address: string): boolean {
   }
 }
 
+// Surge、Clash/mihomo 等代理的 fake-IP 模式把任意域名解析到 198.18.0.0/15 保留段,
+// TUN 接管下连接该解析结果等价于连接真实服务器,因此解析防护对它例外;
+// 配置级校验 validateSignalServer 仍然拒绝该段地址直接出现在信令服务器配置里。
+const PROXY_FAKE_IP_V4_CIDR = "198.18.0.0/15";
+
+export function isResolvableSignalAddress(address: string): boolean {
+  if (isPublicSignalAddress(address)) return true;
+  try {
+    const parsed = ipaddr.process(address);
+    return parsed.kind() === "ipv4" && (parsed as ipaddr.IPv4).match(ipaddr.parseCIDR(PROXY_FAKE_IP_V4_CIDR));
+  } catch {
+    return false;
+  }
+}
+
 export function validateSignalServer(server: string): URL {
   const url = new URL(server);
   if (!["wss:", "https:"].includes(url.protocol) || url.username || url.password || url.hash) {

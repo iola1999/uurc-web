@@ -296,7 +296,7 @@ describe("App remote experience", () => {
     const stageFrame = stage.parentElement as HTMLDivElement;
     const dock = screen.getByLabelText("远控主流程");
     // 连上之后工具栏空闲几秒就会收起，先把指针放到箭头上保持展开，才能点里面的按钮。
-    await user.hover(screen.getByRole("button", { name: "展开远控工具栏" }));
+    await user.hover(screen.getByRole("button", { name: "远控工具栏" }));
 
     // 停靠位置固定在画面顶部居中，全部交给 CSS，组件不写内联定位样式。
     expect(dock.style.cssText).toBe("");
@@ -313,7 +313,7 @@ describe("App remote experience", () => {
     await user.click(screen.getByRole("button", { name: "全屏" }));
     expect(stageFrame).toHaveClass("control-stage-frame--fullscreen");
     expect(screen.getByRole("button", { name: "退出全屏" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "展开远控工具栏" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "远控工具栏" })).toBeInTheDocument();
 
     const sentBefore = TestPeerConnection.sentByLabel.CONTROL_DATA_CHANNEL?.length ?? 0;
     await user.click(screen.getByText("快捷键"));

@@ -38,6 +38,9 @@ export function useRemoteControlController(context: RemoteControlContext) {
   const { roomResponse, setRoomResponse, roomJoinContext, setRoomJoinContext, remoteBootstrap, setRemoteBootstrap } =
     useRoomController(handoff);
   const [forceJoin, setForceJoin] = useState(handoff?.roomJoinContext.forceJoin ?? false);
+  // 用户主动断开代表这次连接流程已经结束：自动重连和进入设备的自动连接都停手，
+  // 直到用户再次发起连接或换一台设备。
+  const [autoResumeAllowed, setAutoResumeAllowed] = useState(true);
   const [runtimeProfile, setRuntimeProfile] = useState<RuntimeProfile | null>(null);
   const { busy, error, run, setError } = useBusyAction();
   const { toast, showToast, dismissToast } = useToastController();
@@ -141,6 +144,11 @@ export function useRemoteControlController(context: RemoteControlContext) {
     [devices.desktopDevices, devices.mobileDevices, devices.tvDevices],
   );
   const selectedDeviceId = routeSelectedDeviceId;
+
+  // 换设备就是重新开始一次连接流程，上一台设备上手动断开的终止指令不再适用。
+  useEffect(() => {
+    setAutoResumeAllowed(true);
+  }, [selectedDeviceId]);
 
   const selectedDevice = useMemo(
     () => allDevices.find((device) => device.deviceId === selectedDeviceId) ?? null,
@@ -273,7 +281,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
   const {
     joinRoomForDevice,
     startSignalGateway: handleStartSignalGateway,
-    stopSignalGateway: handleStopSignalGateway,
+    stopSignalGateway: stopSignalGatewayFlow,
   } = createRemoteRoomLifecycle({
     allDevices,
     authDeviceId: authStatus?.deviceId,
@@ -298,6 +306,13 @@ export function useRemoteControlController(context: RemoteControlContext) {
     setSignalGatewayStatus,
     showToast,
   });
+
+  // 手动断开是用户对这次连接流程的终止指令：排期中的自动重连随之作废，
+  // 自动连接也不能在断开之后又把会话拉起来。
+  async function handleStopSignalGateway() {
+    setAutoResumeAllowed(false);
+    await stopSignalGatewayFlow();
+  }
 
   async function handleReturnToDevices() {
     if (busy !== null) return;
@@ -396,6 +411,8 @@ export function useRemoteControlController(context: RemoteControlContext) {
 
   async function handleNextAction(force = forceJoin) {
     if (busy !== null) return;
+    // 用户重新发起连接，自动恢复重新生效。
+    setAutoResumeAllowed(true);
     if (!loggedIn) {
       setError("请先登录");
       return;
@@ -461,6 +478,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
       controlChannelState,
       roomJoinedForSelectedDevice: roomJoinedBeforePresentation,
       signalGatewayMatchesRoom: signalGatewayMatchesRoomBeforePresentation,
+      resumeAllowed: autoResumeAllowed,
       onReconnect: handleReconnectRemote,
     });
   const presentation = createRemoteControlPresentation({
@@ -561,6 +579,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     loggedIn,
     occupiedByOthers,
     remoteAssistanceActive,
+    resumeAllowed: autoResumeAllowed,
     selectedDeviceExists: selectedDevice !== null,
     selectedDeviceId,
     selectedDeviceIsCurrentAuthDevice,
