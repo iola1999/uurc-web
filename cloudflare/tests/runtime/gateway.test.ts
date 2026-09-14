@@ -143,6 +143,30 @@ describe("Worker gateway and durable storage", () => {
     expect(await response.json()).toMatchObject({ status: "error", error: expect.stringContaining("Join the room") });
   });
 
+  it("passes streamerVersion through to the signal handshake headers", async () => {
+    const stub = sessions.getByName(headers["X-UURC-Session"]);
+    await runInDurableObject(stub, async (instance) => {
+      const captured: (RequestInit | undefined)[] = [];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url: unknown, init?: RequestInit) => {
+          captured.push(init);
+          throw new Error("synthetic handshake stop");
+        }),
+      );
+      await instance.authorizeRoom({
+        token: room.token,
+        servers: room.signalServers,
+        expiresAt: Date.now() + 86400000,
+      });
+      await instance.start({ roomConfig: room, streamerVersion: "V4.5.0" });
+      await instance.start({ roomConfig: room });
+      const handshakeHeaders = captured.map((init) => new Headers(init?.headers as HeadersInit | undefined));
+      expect(handshakeHeaders[0]?.get("streamer_version")).toBe("V4.5.0");
+      expect(handshakeHeaders.at(-1)?.get("streamer_version")).toBe("V4.6.0");
+    });
+  });
+
   it("registers only the UU join response and isolates the authorization", async () => {
     vi.stubGlobal(
       "fetch",

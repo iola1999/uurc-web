@@ -117,7 +117,11 @@ export class RemoteSignalSession extends DurableObject<SignalSessionEnv> {
     this.store.clearEvents();
 
     const startedAt = new Date().toISOString();
-    this.rawHeaders = buildStreamerSignalHeaders({ token: roomConfig.token, gzipSdp: input.gzipSdp ?? true });
+    this.rawHeaders = buildStreamerSignalHeaders({
+      token: roomConfig.token,
+      gzipSdp: input.gzipSdp ?? true,
+      streamerVersion: input.streamerVersion,
+    });
     this.setStatus(
       createSignalGatewayStatus({
         status: "connecting",

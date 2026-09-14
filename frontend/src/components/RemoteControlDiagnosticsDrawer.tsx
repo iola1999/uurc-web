@@ -23,26 +23,31 @@ export interface RemoteControlDiagnosticsDrawerProps {
   controlChannelLabel: string;
   debugEvents: BrowserRemoteDebugEvent[];
   effectiveConnectionRouteLabel: string;
+  fingerprintSummary: string;
   iceControlStatusLabel: string;
   inboundAudioStatsLabel: string;
   inboundVideoStatsLabel: string;
   inputControlActive: boolean;
   joinModeLabel: string;
   networkSwitchSummary: string;
+  publisherNetworkLabel: string;
   remoteBootstrap: RemoteControlBootstrap | null;
   roomDebugPayload: unknown;
   roomJoinModeDebugLabel: string;
   roomReleaseDetail: string;
   roomReleaseLabel: string;
+  routingDecisionLabel: string;
   runtimeProfile: RuntimeProfile | null;
   selectedDevice: UuDevice | null;
   selectedDeviceId: string;
   serviceRoutePolicyLabel: string;
+  signalEventDump: string;
   signalEvents: RemoteSignalGatewayEvent[];
   signalGatewayDisplay: string;
   signalHeaderSummary: string;
   signalReadiness: RemoteSignalReadinessDiagnostics;
   sdpTransportLabel: string;
+  subscriberNetworkLabel: string;
   textChannelLabel: string;
   unexpectedSignalEventSummary: string;
   videoElementLabel: string;
@@ -61,26 +66,31 @@ export function RemoteControlDiagnosticsDrawer({
   controlChannelLabel,
   debugEvents,
   effectiveConnectionRouteLabel,
+  fingerprintSummary,
   iceControlStatusLabel,
   inboundAudioStatsLabel,
   inboundVideoStatsLabel,
   inputControlActive,
   joinModeLabel,
   networkSwitchSummary,
+  publisherNetworkLabel,
   remoteBootstrap,
   roomDebugPayload,
   roomJoinModeDebugLabel,
   roomReleaseDetail,
   roomReleaseLabel,
+  routingDecisionLabel,
   runtimeProfile,
   selectedDevice,
   selectedDeviceId,
   serviceRoutePolicyLabel,
+  signalEventDump,
   signalEvents,
   signalGatewayDisplay,
   signalHeaderSummary,
   signalReadiness,
   sdpTransportLabel,
+  subscriberNetworkLabel,
   textChannelLabel,
   unexpectedSignalEventSummary,
   videoElementLabel,
@@ -102,10 +112,14 @@ export function RemoteControlDiagnosticsDrawer({
         <StatusRow label="候选链路" value={candidatePairSummary} />
         <StatusRow label="链路策略" value={effectiveConnectionRouteLabel} />
         <StatusRow label="服务链路" value={serviceRoutePolicyLabel} />
+        <StatusRow label="服务端路由" value={routingDecisionLabel} />
+        <StatusRow label="被控端网络" value={publisherNetworkLabel} />
+        <StatusRow label="控制端网络" value={subscriberNetworkLabel} />
         <StatusRow
           label="部署运行时"
           value={runtimeProfile ? `${runtimeProfile.runtime} · ${runtimeProfile.signalGateway}` : "-"}
         />
+        <StatusRow label="当前指纹" value={fingerprintSummary} />
         <StatusRow label="ICE" value={iceControlStatusLabel} />
         <StatusRow label="自动切换" value={autoSwitchThresholdLabel} />
         <StatusRow label="网络事件" value={networkSwitchSummary} />
@@ -141,6 +155,13 @@ export function RemoteControlDiagnosticsDrawer({
         <pre className="response-box">
           {roomDebugPayload ? JSON.stringify(roomDebugPayload, null, 2) : "No room response yet."}
         </pre>
+      </AnimatedDisclosure>
+      <AnimatedDisclosure
+        className="debug-details"
+        contentClassName="debug-details-content"
+        summary="信令事件原文（脱敏）"
+      >
+        <pre className="response-box">{signalEventDump || "暂无信令事件。"}</pre>
       </AnimatedDisclosure>
       <AnimatedDisclosure
         className="debug-events-details"

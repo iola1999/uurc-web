@@ -36,7 +36,7 @@ export const STREAMER_SIGNAL_HEADER_KEYS = [
   "streamer_flag",
 ] as const;
 
-export const STREAMER_CLIENT_VERSION = "V3.1.14" as const;
+export const STREAMER_CLIENT_VERSION = "V4.6.0" as const;
 
 export const STREAMER_DEFAULT_SIGNAL_HEADER_VALUES = {
   "X-NRD-CONTROLLING": "0",

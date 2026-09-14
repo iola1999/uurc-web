@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { DecodedStreamerCursorShape } from "@uurc/shared/streamer/controlChannelDecode";
+import {
+  DEFAULT_FINGERPRINT_CONFIG,
+  resolveFingerprintClientType,
+  type FingerprintConfig,
+} from "@uurc/shared/fingerprint";
 import { buildDefaultStreamerConnectOptionsBase64 } from "@uurc/shared/streamer/connectOptions";
-import { STREAMER_CLIENT_TYPES, STREAMER_CONTROL_CONNECT_TYPES } from "@uurc/shared/streamer/connectOptionsModel";
+import { STREAMER_CONTROL_CONNECT_TYPES } from "@uurc/shared/streamer/connectOptionsModel";
 import { buildStreamerControlStreamerDataJson } from "@uurc/shared/streamer/controlConfig";
 
 import { sendRemoteSignalControl, sendRemoteSignalSoac } from "../api/remoteSignalApi.js";
@@ -13,6 +18,7 @@ import { createAppControlId, createIdleBrowserRemoteState } from "../remote/remo
 
 interface StartBrowserRemoteSessionInput {
   deviceId: string;
+  fingerprint?: FingerprintConfig;
   forceRelay: boolean | undefined;
   gzipSdp: boolean;
   remoteAssistance: boolean;
@@ -60,6 +66,7 @@ export function useBrowserRemoteSessionController() {
     const supersededState = sessionRef.current?.close();
     if (supersededState) archivedDebugEventsRef.current = supersededState.debugEvents;
     const appControlId = createAppControlId();
+    const fingerprint = input.fingerprint ?? DEFAULT_FINGERPRINT_CONFIG;
     const session = new BrowserRemoteSession({
       api: {
         sendSignalControl: sendRemoteSignalControl,
@@ -76,10 +83,8 @@ export function useBrowserRemoteSessionController() {
       appControlId,
       appDataBase64: buildDefaultStreamerConnectOptionsBase64({
         deviceId: input.deviceId,
-        clientType:
-          input.targetPlatform === STREAMER_CLIENT_TYPES.Client_MAC
-            ? STREAMER_CLIENT_TYPES.Client_MAC
-            : STREAMER_CLIENT_TYPES.Client_ANDROID,
+        clientType: resolveFingerprintClientType(fingerprint, input.targetPlatform),
+        clientVersion: fingerprint.appVersionName,
         controlConnectType: input.remoteAssistance
           ? STREAMER_CONTROL_CONNECT_TYPES.ControlConnectType_Assistance
           : STREAMER_CONTROL_CONNECT_TYPES.ControlConnectType_Normal,

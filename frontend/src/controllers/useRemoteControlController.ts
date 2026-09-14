@@ -11,6 +11,7 @@ import { SELF_DEVICE_BLOCKED_REASON } from "../app/remoteControlTypes.js";
 import { getRemoteSignalDiagnostics, startRemoteSignalGateway } from "../api/remoteSignalApi.js";
 import { getRuntimeProfile } from "../api/runtimeApi.js";
 import { getDeviceGroups } from "../uu/roomApi.js";
+import { getLastSignalSessionClientId, rememberLastSignalSession } from "../uu/lastSignalSessionStore.js";
 import type { RemoteControlPageProps } from "../components/RemoteControlPage.js";
 import { formatParticipantMeta } from "../devices/deviceLabels.js";
 import { createRemoteControlPresentation } from "../remote/remoteControlPresentation.js";
@@ -18,6 +19,7 @@ import { isDesktopPlatform } from "../remote/browserRemote/utils.js";
 import { remoteShortcutGroupTitleForPlatform } from "../remote/remoteShortcuts.js";
 import { formatSignalGatewayErrorHint } from "../remote/remoteSignalUiModel.js";
 import { useBrowserRemoteSessionController } from "./useBrowserRemoteSessionController.js";
+import { useFingerprintPreferences } from "./useFingerprintPreferences.js";
 import { useRemoteAudioController } from "./useRemoteAudioController.js";
 import { useRemoteAutoConnect } from "./useRemoteAutoConnect.js";
 import { useBusyAction } from "./useBusyAction.js";
@@ -62,6 +64,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     setSignalServerIndex,
     browserWebRtcUnavailableReason,
   } = useRemoteControlPreferences(remoteBootstrap?.signalServers.length ?? 0);
+  const { fingerprint, applyFingerprintPatch, selectFingerprintPreset } = useFingerprintPreferences();
   const {
     signalGatewayContext,
     setSignalGatewayContext,
@@ -154,18 +157,34 @@ export function useRemoteControlController(context: RemoteControlContext) {
   );
   const selectedParticipants = selectedDevice?.participantsInfo ?? [];
   const selectedDeviceOccupied = selectedParticipants.length > 0;
-  // 用 participant.clientId 与当前网页控制端的 clientId 比对，区分“占用者是不是自己上一个会话”。
+  // 占用者是不是自己：登录态 clientId 与上一个信令会话的 clientId 都算「自己」。
+  // 网关加入 UU 房间时不发送 client_id，信令服务器按连接分配，所以刷新后只能靠本地记住的上一个会话值来认。
   // 仅当占用者全部是自己时才自动接管；任一占用者是他人则保留显式接管步骤（避免误踢真实控制端）。
   const currentClientId = authStatus?.clientId ?? "";
+  const previousSessionClientId = useMemo(() => getLastSignalSessionClientId(selectedDeviceId), [selectedDeviceId]);
+  const selfClientIds = useMemo(
+    () => [currentClientId, previousSessionClientId].filter((clientId) => clientId.length > 0),
+    [currentClientId, previousSessionClientId],
+  );
+  const sessionClientId = browserRemoteState.clientId ?? "";
+  const sessionUserId = authStatus?.userId ?? "";
+  useEffect(() => {
+    if (!sessionClientId || !selectedDeviceId) return;
+    rememberLastSignalSession({ clientId: sessionClientId, deviceId: selectedDeviceId, userId: sessionUserId });
+  }, [selectedDeviceId, sessionClientId, sessionUserId]);
   const occupiedBySelfClient =
     selectedParticipants.length > 0 &&
-    currentClientId.length > 0 &&
-    selectedParticipants.every((participant) => participant.clientId === currentClientId);
+    selfClientIds.length > 0 &&
+    selectedParticipants.every(
+      (participant) => participant.clientId.length > 0 && selfClientIds.includes(participant.clientId),
+    );
   const occupiedByOthers = selectedParticipants.some(
-    (participant) => !participant.clientId || participant.clientId !== currentClientId,
+    (participant) => !participant.clientId || !selfClientIds.includes(participant.clientId),
   );
   const occupyingParticipant =
-    selectedParticipants.find((participant) => !participant.clientId || participant.clientId !== currentClientId) ??
+    selectedParticipants.find(
+      (participant) => !participant.clientId || !selfClientIds.includes(participant.clientId),
+    ) ??
     selectedParticipants[0] ??
     null;
   const occupyingParticipantLabel = occupyingParticipant
@@ -262,6 +281,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     selectedDeviceId,
     sdpTransportMode,
     signalServerIndex,
+    streamerVersion: fingerprint.streamerVersion,
     roomJoinContext,
     isActive: () => mounted.current,
     run,
@@ -317,6 +337,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     const targetPlatform = resolveTargetPlatform();
     const session = await createBrowserRemoteSession({
       deviceId: authStatus.deviceId,
+      fingerprint,
       forceRelay: options.forceRelay ?? (connectionRouteMode === "relay" ? true : undefined),
       gzipSdp: sdpTransportMode === "gzip",
       remoteAssistance: roomJoinContext?.kind === "remote_assistance",
@@ -349,6 +370,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
         const status = await startRemoteSignalGateway({
           gzipSdp: sdpTransportMode === "gzip",
           signalServerIndex: signalServerIndex > 0 ? signalServerIndex : undefined,
+          streamerVersion: fingerprint.streamerVersion,
         }).catch((caught) => {
           if (
             roomJoinContext?.kind === "remote_assistance" &&
@@ -431,15 +453,16 @@ export function useRemoteControlController(context: RemoteControlContext) {
     signalGatewayContext?.deviceId === roomJoinContext?.deviceId &&
     signalGatewayContext?.forceJoin === roomJoinContext?.forceJoin &&
     (signalGatewayContext?.kind ?? "owned_device") === (roomJoinContext?.kind ?? "owned_device");
-  const { autoReconnectAttemptCount, autoReconnectStatus, decodeStalledStreak } = useRemoteRecoveryController({
-    autoReconnectEnabled,
-    browserRemoteState,
-    busy,
-    controlChannelState,
-    roomJoinedForSelectedDevice: roomJoinedBeforePresentation,
-    signalGatewayMatchesRoom: signalGatewayMatchesRoomBeforePresentation,
-    onReconnect: handleReconnectRemote,
-  });
+  const { autoReconnectAttemptCount, autoReconnectStatus, autoReconnectStopped, decodeStalledStreak } =
+    useRemoteRecoveryController({
+      autoReconnectEnabled,
+      browserRemoteState,
+      busy,
+      controlChannelState,
+      roomJoinedForSelectedDevice: roomJoinedBeforePresentation,
+      signalGatewayMatchesRoom: signalGatewayMatchesRoomBeforePresentation,
+      onReconnect: handleReconnectRemote,
+    });
   const presentation = createRemoteControlPresentation({
     authDeviceId: authStatus?.deviceId,
     autoReconnectEnabled,
@@ -452,6 +475,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     decodeStalledStreak,
     devices,
     devicesLoaded,
+    fingerprint,
     forceJoin,
     inputControlActive,
     localSignalReadiness,
@@ -485,6 +509,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     controlChannelLabel,
     deviceNotFound,
     effectiveConnectionRouteLabel,
+    fingerprintSummary,
     hasRemoteVideo,
     iceControlStatusLabel,
     inboundAudioStatsLabel,
@@ -494,6 +519,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     networkSwitchSummary,
     nextAction,
     normalJoinTakeoverHint,
+    publisherNetworkLabel,
     remoteAssistanceActive,
     remoteRecoveryLabel,
     roomDebugPayload,
@@ -504,10 +530,12 @@ export function useRemoteControlController(context: RemoteControlContext) {
     roomReleaseDetail,
     roomReleaseLabel,
     roomRequiresTakeover,
+    routingDecisionLabel,
     sdpTransportLabel,
     selectedDeviceIsCurrentAuthDevice,
     selectedTargetLabel,
     serviceRoutePolicyLabel,
+    signalEventDump,
     signalGatewayDisplay,
     signalGatewayErrorHint,
     signalGatewayMatchesRoom,
@@ -516,6 +544,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     signalReadiness,
     signalServerOptions,
     stageStatusLabel,
+    subscriberNetworkLabel,
     textChannelLabel,
     unexpectedSignalEventSummary,
     videoElementLabel,
@@ -592,6 +621,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     },
     reconnect: {
       autoReconnectAttemptCount,
+      autoReconnectStopped,
       busy,
       canReconnectRemote: browserConnectionRecoverable,
       onReconnectRemote: () => void handleReconnectRemote(),
@@ -666,9 +696,12 @@ export function useRemoteControlController(context: RemoteControlContext) {
       browserRtcReady,
       busy,
       connectionRouteMode,
+      fingerprint,
       forceJoin,
       onAutoConnectChange: setAutoConnect,
       onConnectionRouteModeChange: setConnectionRouteMode,
+      onFingerprintPatch: applyFingerprintPatch,
+      onFingerprintPreset: selectFingerprintPreset,
       onForceJoinChange: setForceJoin,
       onSignalServerIndexChange: setSignalServerIndex,
       onSdpTransportModeChange: setSdpTransportMode,
@@ -693,26 +726,31 @@ export function useRemoteControlController(context: RemoteControlContext) {
       controlChannelLabel,
       debugEvents,
       effectiveConnectionRouteLabel,
+      fingerprintSummary,
       iceControlStatusLabel,
       inboundAudioStatsLabel,
       inboundVideoStatsLabel,
       inputControlActive,
       joinModeLabel,
       networkSwitchSummary,
+      publisherNetworkLabel,
       remoteBootstrap,
       roomDebugPayload,
       roomJoinModeDebugLabel,
       roomReleaseDetail,
       roomReleaseLabel,
+      routingDecisionLabel,
       runtimeProfile,
       selectedDevice,
       selectedDeviceId,
       serviceRoutePolicyLabel,
+      signalEventDump,
       signalEvents,
       signalGatewayDisplay,
       signalHeaderSummary,
       signalReadiness,
       sdpTransportLabel,
+      subscriberNetworkLabel,
       textChannelLabel,
       unexpectedSignalEventSummary,
       videoElementLabel,

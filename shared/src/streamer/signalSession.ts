@@ -1,5 +1,5 @@
 import { STREAMER_SOAC_EVENT } from "./signalSoac.js";
-import { STREAMER_DEFAULT_SIGNAL_HEADER_VALUES } from "./internal/signalSchema.js";
+import { STREAMER_CLIENT_VERSION, STREAMER_DEFAULT_SIGNAL_HEADER_VALUES } from "./internal/signalSchema.js";
 
 export const STREAMER_CONTROLLER_SIGNAL_EVENTS = [
   STREAMER_SOAC_EVENT,
@@ -24,6 +24,7 @@ interface StreamerFlagHeaderOptions {
 export interface BuildStreamerSignalHeadersInput {
   token: string;
   gzipSdp?: boolean;
+  streamerVersion?: string;
 }
 
 function buildStreamerFlagHeader(options: StreamerFlagHeaderOptions): string {
@@ -34,6 +35,8 @@ export function buildStreamerSignalHeaders(input: BuildStreamerSignalHeadersInpu
   return {
     "X-NRD-AUTH": input.token,
     ...STREAMER_DEFAULT_SIGNAL_HEADER_VALUES,
+    // 覆盖必须写在默认值 spread 之后
+    streamer_version: input.streamerVersion ?? STREAMER_CLIENT_VERSION,
     streamer_flag: buildStreamerFlagHeader({ gzipSdp: input.gzipSdp ?? true }),
   };
 }

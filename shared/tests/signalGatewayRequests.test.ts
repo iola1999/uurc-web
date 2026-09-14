@@ -48,9 +48,31 @@ describe("signal gateway request validation", () => {
     });
   });
 
+  it("passes through a well-formed streamerVersion override", () => {
+    expect(parseSignalGatewayStartRequest({ streamerVersion: "V4.6.0" })).toMatchObject({
+      streamerVersion: "V4.6.0",
+    });
+    expect(parseSignalGatewayStartRequest({}).streamerVersion).toBeUndefined();
+  });
+
   it.each([
     ["start scalar", () => parseSignalGatewayStartRequest("invalid"), "Expected a JSON signal gateway payload"],
     ["start gzipSdp", () => parseSignalGatewayStartRequest({ gzipSdp: "false" }), "gzipSdp must be a boolean"],
+    [
+      "start streamerVersion CRLF",
+      () => parseSignalGatewayStartRequest({ streamerVersion: "V4.6.0\r\nX-Injected: 1" }),
+      "streamerVersion must match",
+    ],
+    [
+      "start streamerVersion format",
+      () => parseSignalGatewayStartRequest({ streamerVersion: "4.6.0" }),
+      "streamerVersion must match",
+    ],
+    [
+      "start streamerVersion type",
+      () => parseSignalGatewayStartRequest({ streamerVersion: 46 }),
+      "streamerVersion must match",
+    ],
     [
       "start signalServers",
       () => parseSignalGatewayStartRequest({ roomConfig: { token: "token", signalServers: [1] } }),

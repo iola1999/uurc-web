@@ -1,6 +1,9 @@
-import { APP_PACKAGE, APP_SIGNING_KEY, VERSION_CODE, VERSION_NAME } from "@uurc/shared/constants";
+import { APP_PACKAGE, APP_SIGNING_KEY } from "@uurc/shared/constants";
 import type { LoginState } from "@uurc/shared/authState";
 
+import { readFingerprintConfig } from "./fingerprintStore.js";
+
+// 预留的按请求覆盖入口;将来支持完整 Mac HTTP 身份(X-Param-H/M/L 签名方案)时从这里扩展
 interface HeaderOverrides {
   channel?: string;
   operator?: string;
@@ -52,14 +55,16 @@ export async function buildSignedHeaders({
 }
 
 function buildCommonHeaders(state: Partial<LoginState>, overrides: HeaderOverrides = {}): Record<string, string> {
+  // 指纹覆盖发生在签名计算之前,buildSignedHeaders 对成品 headers 计算 X-Param-SIGN
+  const fingerprint = readFingerprintConfig();
   return {
     "X-Param-CHN": overrides.channel ?? state.channel ?? "nochannel",
     "X-Param-OPR": overrides.operator ?? "",
     "X-Param-PKGN": APP_PACKAGE,
-    "X-Param-PLAT": "2",
+    "X-Param-PLAT": fingerprint.httpPlatform,
     "X-Param-REL": "prod",
-    "X-Param-VC": VERSION_CODE,
-    "X-Param-VN": VERSION_NAME,
+    "X-Param-VC": fingerprint.appVersionCode,
+    "X-Param-VN": fingerprint.appVersionName,
     "X-Param-ABI": overrides.abi ?? "arm64-v8a",
     "X-Param-client-id": overrides.clientId ?? state.clientId ?? "",
     "X-Param-device-id": state.deviceId ?? "",

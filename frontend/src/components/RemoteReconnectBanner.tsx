@@ -22,6 +22,7 @@ const reconnectBannerVariants = {
 
 export interface RemoteReconnectBannerProps {
   autoReconnectAttemptCount: number;
+  autoReconnectStopped: boolean;
   busy: BusyAction;
   canReconnectRemote: boolean;
   onReconnectRemote: () => void;
@@ -30,12 +31,14 @@ export interface RemoteReconnectBannerProps {
 
 export function RemoteReconnectBanner({
   autoReconnectAttemptCount,
+  autoReconnectStopped,
   busy,
   canReconnectRemote,
   onReconnectRemote,
   remoteRecoveryLabel,
 }: RemoteReconnectBannerProps) {
   const attemptSuffix = autoReconnectAttemptCount > 0 ? `（第 ${autoReconnectAttemptCount} 次）` : "";
+  const progressLabel = autoReconnectStopped ? "已停止自动重连，可手动重连" : `正在自动重连${attemptSuffix}`;
 
   return (
     <AnimatePresence initial={false}>
@@ -51,7 +54,7 @@ export function RemoteReconnectBanner({
         >
           <span className="reconnect-banner-spinner" aria-hidden="true" />
           <span>
-            {remoteRecoveryLabel} · 正在自动重连{attemptSuffix}
+            {remoteRecoveryLabel} · {progressLabel}
           </span>
           <button onClick={onReconnectRemote} disabled={!canReconnectRemote || busy !== null}>
             <RotateCcw size={12} />

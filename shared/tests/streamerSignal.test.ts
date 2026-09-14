@@ -63,14 +63,18 @@ describe("streamer signal", () => {
       "streamer_version",
       "streamer_flag",
     ]);
-    expect(STREAMER_CLIENT_VERSION).toBe("V3.1.14");
+    expect(STREAMER_CLIENT_VERSION).toBe("V4.6.0");
     expect(STREAMER_DEFAULT_SIGNAL_HEADER_VALUES).toEqual({
       "X-NRD-CONTROLLING": "0",
-      streamer_version: "V3.1.14",
+      streamer_version: "V4.6.0",
     });
     expect(buildStreamerSignalHeaders({ token: "room-token", gzipSdp: true }).streamer_flag).toBe(
       '{"sdp_flags":{"gzip_sdp":true}}',
     );
+    expect(buildStreamerSignalHeaders({ token: "room-token", streamerVersion: "V9.9.9" })).toMatchObject({
+      "X-NRD-CONTROLLING": "0",
+      streamer_version: "V9.9.9",
+    });
   });
 
   it("captures controller socket.io event names and control payload keys", () => {
@@ -220,7 +224,7 @@ describe("streamer signal", () => {
     expect(buildStreamerSignalHeaders({ token: "room-token" })).toEqual({
       "X-NRD-AUTH": "room-token",
       "X-NRD-CONTROLLING": "0",
-      streamer_version: "V3.1.14",
+      streamer_version: "V4.6.0",
       streamer_flag: '{"sdp_flags":{"gzip_sdp":true}}',
     });
   });

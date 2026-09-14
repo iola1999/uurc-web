@@ -1,3 +1,5 @@
+import { VERSION_NAME } from "../../constants.js";
+
 export const STREAMER_ROOM_CONFIG_FIELDS = [
   "token",
   "signalServers",
@@ -35,7 +37,8 @@ export const STREAMER_CAPTURE_TYPES = {
   CT_TERMINAL: 8,
 } as const;
 
-export const STREAMER_APP_CLIENT_VERSION = "4.23.0" as const;
+// 与 HTTP 层 X-Param-VN 同源,避免两处版本值漂移
+export const STREAMER_APP_CLIENT_VERSION = VERSION_NAME;
 
 export const STREAMER_FEATURE_FLAG_FIELDS = [
   { tag: 1, name: "ff_capture_setting" },

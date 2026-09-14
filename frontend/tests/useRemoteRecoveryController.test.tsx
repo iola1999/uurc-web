@@ -106,6 +106,81 @@ describe("useRemoteRecoveryController", () => {
       expect(result.current.browserConnectionRecoverable).toBe(true);
     },
   );
+
+  it("backs off once three triggers land inside twenty seconds", async () => {
+    vi.useFakeTimers();
+    try {
+      const reconnect = vi.fn(async () => {});
+      const { result } = renderHook(() =>
+        useRemoteRecoveryController({
+          autoReconnectEnabled: true,
+          browserRemoteState: createState({ status: "transport_stalled", updatedAtMs: 1000 }),
+          busy: null,
+          controlChannelState: "closed",
+          roomJoinedForSelectedDevice: true,
+          signalGatewayMatchesRoom: false,
+          onReconnect: reconnect,
+        }),
+      );
+
+      // 前三次按常规间隔触发：0.9s、1.8s、3.6s，三次落在 20 秒窗口内。
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(900);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1800);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3600);
+      });
+      expect(reconnect).toHaveBeenCalledTimes(3);
+
+      // 第四次进入退避：再过 9 秒仍未触发，到 20 秒才触发。
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(9000);
+      });
+      expect(reconnect).toHaveBeenCalledTimes(3);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(12_000);
+      });
+      expect(reconnect).toHaveBeenCalledTimes(4);
+      expect(result.current.autoReconnectAttemptCount).toBe(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("stops auto reconnect after ten consecutive attempts and keeps the manual path", async () => {
+    vi.useFakeTimers();
+    try {
+      const reconnect = vi.fn(async () => {});
+      const { result } = renderHook(() =>
+        useRemoteRecoveryController({
+          autoReconnectEnabled: true,
+          browserRemoteState: createState({ status: "transport_stalled", updatedAtMs: 1000 }),
+          busy: null,
+          controlChannelState: "closed",
+          roomJoinedForSelectedDevice: true,
+          signalGatewayMatchesRoom: false,
+          onReconnect: reconnect,
+        }),
+      );
+
+      // 退避间隔最长 60 秒，逐段推进足够覆盖十次尝试。
+      for (let step = 0; step < 20; step += 1) {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(60_000);
+        });
+      }
+
+      expect(reconnect).toHaveBeenCalledTimes(10);
+      expect(result.current.autoReconnectStopped).toBe(true);
+      expect(result.current.autoReconnectStatus).toContain("停止自动重试");
+      expect(result.current.browserConnectionRecoverable).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 function createState(

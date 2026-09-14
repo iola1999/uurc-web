@@ -59,6 +59,7 @@ interface RemoteRoomLifecycleOptions {
   selectedDeviceId: string;
   sdpTransportMode: "gzip" | "plain";
   signalServerIndex: number;
+  streamerVersion: string;
   roomJoinContext: RoomJoinContext | null;
   isActive?(): boolean;
   run: RunAction;
@@ -130,6 +131,7 @@ export function createRemoteRoomLifecycle(options: RemoteRoomLifecycleOptions) {
       const status = await startRemoteSignalGateway({
         gzipSdp: options.sdpTransportMode === "gzip",
         signalServerIndex: options.signalServerIndex > 0 ? options.signalServerIndex : undefined,
+        streamerVersion: options.streamerVersion,
       });
       if (options.isActive?.() === false) return;
       nextStatus = status;

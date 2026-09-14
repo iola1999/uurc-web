@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { VERSION_NAME } from "../src/constants.js";
 import { buildDefaultStreamerConnectOptionsBase64 } from "../src/streamer/connectOptions.js";
 import { STREAMER_CLIENT_TYPES, STREAMER_CONTROL_CONNECT_TYPES } from "../src/streamer/connectOptionsModel.js";
 import {
@@ -68,7 +69,7 @@ describe("streamer connect options", () => {
       Client_WINDOWS: 3,
       Client_MAC: 4,
     });
-    expect(STREAMER_APP_CLIENT_VERSION).toBe("4.23.0");
+    expect(STREAMER_APP_CLIENT_VERSION).toBe(VERSION_NAME);
     expect(STREAMER_DECODER_CAP_FIELDS).toEqual([
       { tag: 1, name: "fps", defaultValue: 0 },
       { tag: 2, name: "codec_type", defaultValue: "CodecType_UNKNOWN" },
@@ -218,14 +219,14 @@ describe("streamer connect options", () => {
       0x18, 0x01, 0x20, 0x01, 0x2a, 0x06, 0x08, 0x80, 0x0f, 0x10, 0xb8, 0x08, 0x22, 0x0c, 0x08, 0x3c, 0x10, 0x01, 0x18,
       0x80, 0x1e, 0x20, 0xf0, 0x10, 0x28, 0x01, 0x32, 0x08, 0x08, 0x80, 0x0f, 0x10, 0xb8, 0x08, 0x18, 0x3c, 0x40, 0x02,
       0x4a, 0x0c, 0x77, 0x65, 0x62, 0x2d, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x2d, 0x31, 0x50, 0x01, 0x5a, 0x0e, 0x08,
-      0x02, 0x10, 0x01, 0x18, 0x02, 0x20, 0x02, 0x30, 0x02, 0x38, 0x02, 0x40, 0x03, 0x62, 0x06, 0x34, 0x2e, 0x32, 0x33,
-      0x2e, 0x30,
+      0x02, 0x10, 0x01, 0x18, 0x02, 0x20, 0x02, 0x30, 0x02, 0x38, 0x02, 0x40, 0x03, 0x62, 0x06, 0x34, 0x2e, 0x33, 0x39,
+      0x2e, 0x31,
     ]);
     expect(buildDefaultStreamerConnectOptionsBase64({ deviceId: "web-device-1" })).toBe(
-      "CAEQ////////////ARoQCAIQAxgBIAEqBgiADxC4CCIMCDwQARiAHiDwECgBMggIgA8QuAgYPEACSgx3ZWItZGV2aWNlLTFQAVoOCAIQARgCIAIwAjgCQANiBjQuMjMuMA==",
+      "CAEQ////////////ARoQCAIQAxgBIAEqBgiADxC4CCIMCDwQARiAHiDwECgBMggIgA8QuAgYPEACSgx3ZWItZGV2aWNlLTFQAVoOCAIQARgCIAIwAjgCQANiBjQuMzkuMQ==",
     );
     expect(buildDefaultStreamerConnectOptionsBase64({ deviceId: "web-device-1", cursorCapture: false })).toBe(
-      "CAEQ////////////ARoOCAIQAyABKgYIgA8QuAgiDAg8EAEYgB4g8BAoATIICIAPELgIGDxAAkoMd2ViLWRldmljZS0xUAFaDggCEAEYAiACMAI4AkADYgY0LjIzLjA=",
+      "CAEQ////////////ARoOCAIQAyABKgYIgA8QuAgiDAg8EAEYgB4g8BAoATIICIAPELgIGDxAAkoMd2ViLWRldmljZS0xUAFaDggCEAEYAiACMAI4AkADYgY0LjM5LjE=",
     );
     expect(
       buildDefaultStreamerConnectOptionsBase64({
@@ -233,7 +234,7 @@ describe("streamer connect options", () => {
         controlConnectType: STREAMER_CONTROL_CONNECT_TYPES.ControlConnectType_Assistance,
       }),
     ).toBe(
-      "CAEQ////////////ARoQCAIQAxgBIAEqBgiADxC4CCIMCDwQARiAHiDwECgBMggIgA8QuAgYPEACSgx3ZWItZGV2aWNlLTFQAloOCAIQARgCIAIwAjgCQANiBjQuMjMuMA==",
+      "CAEQ////////////ARoQCAIQAxgBIAEqBgiADxC4CCIMCDwQARiAHiDwECgBMggIgA8QuAgYPEACSgx3ZWItZGV2aWNlLTFQAloOCAIQARgCIAIwAjgCQANiBjQuMzkuMQ==",
     );
     expect(
       buildDefaultStreamerConnectOptionsBase64({
@@ -241,7 +242,7 @@ describe("streamer connect options", () => {
         clientType: STREAMER_CLIENT_TYPES.Client_MAC,
       }),
     ).toBe(
-      "CAEQ////////////ARoQCAIQAxgBIAEqBgiADxC4CCIMCDwQARiAHiDwECgBMggIgA8QuAgYPEAESgx3ZWItZGV2aWNlLTFQAVoOCAIQARgCIAIwAjgCQANiBjQuMjMuMA==",
+      "CAEQ////////////ARoQCAIQAxgBIAEqBgiADxC4CCIMCDwQARiAHiDwECgBMggIgA8QuAgYPEAESgx3ZWItZGV2aWNlLTFQAVoOCAIQARgCIAIwAjgCQANiBjQuMzkuMQ==",
     );
   });
 

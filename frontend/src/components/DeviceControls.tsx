@@ -87,6 +87,7 @@ export function DeviceList({
         </span>
         <span className="device-row-meta">
           {categoryLabel} · {controlLabel || (online ? "在线" : "离线")}
+          {device.versionName ? ` · v${device.versionName}` : ""}
         </span>
         {canConnect ? (
           <button

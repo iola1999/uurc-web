@@ -31,7 +31,7 @@ describe("RemoteControlService", () => {
       signalHeaders: {
         "X-NRD-AUTH": "<redacted room token>",
         "X-NRD-CONTROLLING": "0",
-        streamer_version: "V3.1.14",
+        streamer_version: "V4.6.0",
         streamer_flag: '{"sdp_flags":{"gzip_sdp":true}}',
       },
       signalEvents: ["soac", "streamer_push", "forward_setting", "device_capability"],
@@ -55,7 +55,7 @@ describe("RemoteControlService", () => {
         text: "TEXT_DATA_CHANNEL",
       },
       connectOptions: {
-        appClientVersion: "4.23.0",
+        appClientVersion: "4.39.1",
         clientTypes: {
           Client_ANDROID: 2,
         },
@@ -115,7 +115,7 @@ describe("RemoteControlService", () => {
       headers: {
         "X-NRD-AUTH": "room-secret-token",
         "X-NRD-CONTROLLING": "0",
-        streamer_version: "V3.1.14",
+        streamer_version: "V4.6.0",
         streamer_flag: '{"sdp_flags":{"gzip_sdp":true}}',
       },
       timeoutMs: 12000,
@@ -135,6 +135,22 @@ describe("RemoteControlService", () => {
       connectionId: "fake-signal-1",
     });
     expect(JSON.stringify(status)).not.toContain("room-secret-token");
+  });
+
+  it("applies the streamerVersion override to the signal handshake headers", async () => {
+    const connector = new FakeSignalGatewayConnector();
+    const service = new RemoteControlService(createRoomConfigSource(), connector);
+
+    await service.startSignalGateway({ streamerVersion: "V4.5.0" });
+
+    expect(connector.connectCalls[0]).toMatchObject({
+      headers: {
+        "X-NRD-AUTH": "room-secret-token",
+        "X-NRD-CONTROLLING": "0",
+        streamer_version: "V4.5.0",
+        streamer_flag: '{"sdp_flags":{"gzip_sdp":true}}',
+      },
+    });
   });
 
   it("can start the signal gateway from a selected signal server index", async () => {

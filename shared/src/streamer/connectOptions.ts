@@ -30,6 +30,7 @@ export interface BuildDefaultStreamerConnectOptionsBase64Input {
   cursorCapture?: boolean;
   localResolution?: StreamerScreenResolutionInput | null;
   virtualDisplayModes?: readonly StreamerVirtualDisplayModeInput[];
+  clientVersion?: string;
 }
 
 export function buildDefaultStreamerConnectOptionsBase64(input: BuildDefaultStreamerConnectOptionsBase64Input): string {
@@ -50,7 +51,7 @@ export function buildDefaultStreamerConnectOptionsBase64(input: BuildDefaultStre
       clientType: input.clientType ?? STREAMER_CLIENT_TYPES.Client_ANDROID,
       controlConnectType: input.controlConnectType ?? STREAMER_CONTROL_CONNECT_TYPES.ControlConnectType_Normal,
       featureFlags: STREAMER_DEFAULT_FEATURE_FLAGS,
-      clientVersion: STREAMER_APP_CLIENT_VERSION,
+      clientVersion: input.clientVersion ?? STREAMER_APP_CLIENT_VERSION,
     }),
   );
 }

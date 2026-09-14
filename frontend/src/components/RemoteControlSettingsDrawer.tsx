@@ -1,6 +1,8 @@
 import { CircleStop, LoaderCircle, Monitor, PlugZap } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 
 import type { UuDevice, UuParticipantInfo } from "@uurc/shared/devices";
+import type { FingerprintClientType, FingerprintConfig, FingerprintPresetId } from "@uurc/shared/fingerprint";
 
 import type { BusyAction, ConnectionRouteMode, SdpTransportMode } from "../app/remoteControlTypes.js";
 import { ParticipantList } from "./ParticipantList.js";
@@ -13,9 +15,12 @@ export interface RemoteControlSettingsDrawerProps {
   browserRtcReady: boolean;
   busy: BusyAction;
   connectionRouteMode: ConnectionRouteMode;
+  fingerprint: FingerprintConfig;
   forceJoin: boolean;
   onAutoConnectChange: (enabled: boolean) => void;
   onConnectionRouteModeChange: (mode: ConnectionRouteMode) => void;
+  onFingerprintPatch: (patch: Partial<FingerprintConfig>) => void;
+  onFingerprintPreset: (preset: FingerprintPresetId) => void;
   onForceJoinChange: (forceJoin: boolean) => void;
   onSignalServerIndexChange: (index: number) => void;
   onSdpTransportModeChange: (mode: SdpTransportMode) => void;
@@ -34,9 +39,12 @@ export function RemoteControlSettingsDrawer({
   browserRtcReady,
   busy,
   connectionRouteMode,
+  fingerprint,
   forceJoin,
   onAutoConnectChange,
   onConnectionRouteModeChange,
+  onFingerprintPatch,
+  onFingerprintPreset,
   onForceJoinChange,
   onSignalServerIndexChange,
   onSdpTransportModeChange,
@@ -136,7 +144,100 @@ export function RemoteControlSettingsDrawer({
             ]}
           />
         </div>
+        <div className="control-field">
+          <span className="control-field-label">客户端指纹</span>
+          <SegmentedControl
+            name="fingerprintPreset"
+            ariaLabel="客户端指纹"
+            value={fingerprint.preset}
+            onChange={onFingerprintPreset}
+            options={[
+              { value: "android-v4", label: "默认" },
+              { value: "android-legacy", label: "旧版 4.23" },
+              { value: "custom", label: "自定义" },
+            ]}
+          />
+        </div>
+        <AnimatedDisclosure
+          className="control-subdrawer"
+          contentClassName="control-subdrawer-content"
+          summary="指纹参数"
+        >
+          <FingerprintTextField
+            label="信令版本"
+            value={fingerprint.streamerVersion}
+            onCommit={(value) => onFingerprintPatch({ streamerVersion: value })}
+          />
+          <FingerprintTextField
+            label="版本名（VN）"
+            value={fingerprint.appVersionName}
+            onCommit={(value) => onFingerprintPatch({ appVersionName: value })}
+          />
+          <FingerprintTextField
+            label="版本号（VC）"
+            value={fingerprint.appVersionCode}
+            onCommit={(value) => onFingerprintPatch({ appVersionCode: value })}
+          />
+          <FingerprintTextField
+            label="平台（PLAT）"
+            value={fingerprint.httpPlatform}
+            onCommit={(value) => onFingerprintPatch({ httpPlatform: value })}
+          />
+          <label className="control-field select-field" htmlFor="fingerprint-client-type">
+            <span className="control-field-label">客户端类型</span>
+            <select
+              id="fingerprint-client-type"
+              aria-label="客户端类型"
+              value={String(fingerprint.clientType)}
+              onChange={(event) =>
+                onFingerprintPatch({
+                  // normalize 会校验取值,非法值回落默认
+                  clientType:
+                    event.target.value === "auto" ? "auto" : (Number(event.target.value) as FingerprintClientType),
+                })
+              }
+            >
+              <option value="auto">自动（跟随被控端）</option>
+              <option value="2">Android</option>
+              <option value="1">iOS</option>
+              <option value="3">Windows</option>
+              <option value="4">Mac</option>
+            </select>
+          </label>
+          <p className="field-hint">
+            信令版本在「手动断开连接」后重新「手动启动连接服务」生效；其余字段在下次请求或下次启动画面时生效。
+          </p>
+        </AnimatedDisclosure>
       </AnimatedDisclosure>
     </div>
+  );
+}
+
+// 失焦提交:输入过程中保留草稿,非法值被 normalize 拒绝时回退到当前生效值
+function FingerprintTextField({
+  label,
+  value,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  onCommit(value: string): void;
+}) {
+  const [draft, setDraft] = useState(value);
+  const fieldId = useId();
+  useEffect(() => setDraft(value), [value]);
+  return (
+    <label className="control-field" htmlFor={fieldId}>
+      <span className="control-field-label">{label}</span>
+      <input
+        id={fieldId}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={() => {
+          onCommit(draft.trim());
+          setDraft(value);
+        }}
+      />
+    </label>
   );
 }

@@ -1,4 +1,6 @@
 import type { UuDevice, UuDeviceGroups } from "@uurc/shared/devices";
+import { summarizeFingerprintConfig, type FingerprintConfig } from "@uurc/shared/fingerprint";
+import { redactSignalEventPayload } from "@uurc/shared/redact";
 import type { RemoteControlBootstrap } from "@uurc/shared/remoteBootstrap";
 import type { RemoteSignalGatewayEvent, RemoteSignalGatewayStatus } from "@uurc/shared/signalGateway/model";
 import type { RemoteSignalReadinessDiagnostics } from "@uurc/shared/streamer/readiness";
@@ -27,11 +29,15 @@ import {
 } from "./remoteSessionUiModel.js";
 import {
   formatAutoSwitchThresholds,
+  formatControlRoutingDecision,
+  formatPeerNetworkInfo,
   formatSignalGatewayErrorHint,
   formatSignalGatewayState,
   summarizeSwitchNetworkNotify,
   summarizeUnexpectedSignalEvents,
 } from "./remoteSignalUiModel.js";
+
+const SIGNAL_EVENT_DUMP_LIMIT = 20;
 
 interface RemoteControlPresentationInput {
   authDeviceId: string | undefined;
@@ -45,6 +51,7 @@ interface RemoteControlPresentationInput {
   decodeStalledStreak: number;
   devices: UuDeviceGroups;
   devicesLoaded: boolean;
+  fingerprint: FingerprintConfig;
   forceJoin: boolean;
   inputControlActive: boolean;
   localSignalReadiness: RemoteSignalReadinessDiagnostics;
@@ -208,6 +215,19 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
             : input.roomResponse || input.remoteBootstrap
               ? "已就绪，点「开始连接」"
               : "未连接";
+  const controlResult = input.browserRemoteState.controlResult;
+  // 事件原文仅供本地调试,限最近若干条并脱敏 TURN 凭证
+  const signalEventDump =
+    input.signalEvents.length > 0
+      ? JSON.stringify(
+          input.signalEvents.slice(-SIGNAL_EVENT_DUMP_LIMIT).map((event) => ({
+            ...event,
+            payload: redactSignalEventPayload(event.payload),
+          })),
+          null,
+          2,
+        )
+      : "";
 
   return {
     audioPlaybackLabel: formatAudioElement(input.browserRemoteState.audioElement),
@@ -232,6 +252,7 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
       !input.selectedDevice &&
       !remoteAssistanceActive,
     effectiveConnectionRouteLabel,
+    fingerprintSummary: summarizeFingerprintConfig(input.fingerprint),
     hasRemoteVideo,
     iceControlStatusLabel,
     inboundAudioStatsLabel: formatInboundAudioStats(input.browserRemoteState.inboundAudio),
@@ -241,6 +262,7 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
     networkSwitchSummary: summarizeSwitchNetworkNotify(input.signalEvents),
     nextAction,
     normalJoinTakeoverHint,
+    publisherNetworkLabel: formatPeerNetworkInfo(controlResult?.publisher),
     remoteAssistanceActive,
     remoteRecoveryLabel,
     roomDebugPayload: input.roomResponse
@@ -267,10 +289,12 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
       input.roomJoinContext,
     ),
     roomRequiresTakeover,
+    routingDecisionLabel: formatControlRoutingDecision(controlResult),
     sdpTransportLabel: input.sdpTransportMode === "gzip" ? "gzip_sdp" : "plain_sdp",
     selectedDeviceIsCurrentAuthDevice,
     selectedTargetLabel,
     serviceRoutePolicyLabel,
+    signalEventDump,
     signalGatewayDisplay: formatSignalGatewayState(signalGatewayState),
     signalGatewayErrorHint: formatSignalGatewayErrorHint(input.signalGatewayStatus),
     signalGatewayMatchesRoom,
@@ -279,6 +303,7 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
     signalReadiness,
     signalServerOptions: input.remoteBootstrap?.signalServers ?? [],
     stageStatusLabel,
+    subscriberNetworkLabel: formatPeerNetworkInfo(controlResult?.subscriber),
     textChannelLabel: formatDataChannelState(input.textChannelState),
     unexpectedSignalEventSummary: summarizeUnexpectedSignalEvents(
       input.signalEvents,

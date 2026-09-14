@@ -1,3 +1,4 @@
+import { STREAMER_VERSION_PATTERN } from "../fingerprint.js";
 import type { RemoteRoomJoinContext } from "../roomSession.js";
 import type { StreamerRoomConfig } from "../roomConfig.js";
 import {
@@ -37,10 +38,12 @@ export function parseSignalGatewayStartRequest(body: unknown): RemoteSignalGatew
   const record = body as Record<string, unknown>;
   assertOptionalBoolean(record.gzipSdp, "gzipSdp");
   assertOptionalNonNegativeInteger(record.signalServerIndex, "signalServerIndex");
+  assertOptionalStreamerVersion(record.streamerVersion, "streamerVersion");
 
   return {
     gzipSdp: record.gzipSdp,
     signalServerIndex: record.signalServerIndex,
+    streamerVersion: record.streamerVersion,
     roomConfig: parseOptionalRoomConfig(record.roomConfig),
     joinContext: parseOptionalJoinContext(record.joinContext),
   };
@@ -165,6 +168,13 @@ function assertOptionalString(value: unknown, fieldName: string): asserts value 
 function assertOptionalBoolean(value: unknown, fieldName: string): asserts value is boolean | undefined {
   if (value !== undefined && typeof value !== "boolean") {
     throw new ValidationError(`${fieldName} must be a boolean`);
+  }
+}
+
+// streamerVersion 会进入信令 WebSocket 握手 header,正则校验同时是 CRLF 注入防线,Node 与 Cloudflare 共用,不可放宽
+function assertOptionalStreamerVersion(value: unknown, fieldName: string): asserts value is string | undefined {
+  if (value !== undefined && (typeof value !== "string" || !STREAMER_VERSION_PATTERN.test(value))) {
+    throw new ValidationError(`${fieldName} must match ${STREAMER_VERSION_PATTERN.source}`);
   }
 }
 

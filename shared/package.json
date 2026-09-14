@@ -20,6 +20,10 @@
       "types": "./dist/devices.d.ts",
       "default": "./dist/devices.js"
     },
+    "./fingerprint": {
+      "types": "./dist/fingerprint.d.ts",
+      "default": "./dist/fingerprint.js"
+    },
     "./frontendRoutes": {
       "types": "./dist/frontendRoutes.d.ts",
       "default": "./dist/frontendRoutes.js"

@@ -48,6 +48,44 @@ describe("App remote lifecycle", () => {
     expect(screen.queryByRole("heading", { name: "我的设备" })).not.toBeInTheDocument();
   });
 
+  it("takes over automatically when the occupant is this browser's previous session", async () => {
+    vi.stubGlobal("RTCPeerConnection", TestPeerConnection);
+    // 模拟刷新后的场景：上一个会话仍被 UU 记为占用者，其 client_id 与本地记住的信令会话一致。
+    appBackend.currentParticipants = [
+      {
+        client_id: "signal-prev-session",
+        device_id: "web-prev",
+        alias: "REDMI K90",
+        platform: 2,
+        user_join_type: 1,
+        controlled_time: 4,
+      },
+    ];
+    window.localStorage.setItem(
+      "uurc.lastSignalSession",
+      JSON.stringify({
+        capturedAt: new Date().toISOString(),
+        clientId: "signal-prev-session",
+        deviceId: "desktop-1",
+        userId: "user-1",
+      }),
+    );
+    // 同文件更早的用例可能把自动重连偏好关掉了，这里显式打开，自动接管依赖它。
+    window.localStorage.setItem("uurc.autoConnect", "true");
+
+    window.history.replaceState(null, "", "/devices/desktop-1/control");
+    render(<App />);
+
+    // 无需用户点击：识别出自己后直接以 force_join 接管。
+    await waitFor(() =>
+      expect(uuCalls("/api/v1/room/join/by_device/desktop-1")[0]?.body).toEqual({ force_join: true }),
+    );
+    expect(document.body.textContent).toContain("检测到你之前的会话仍在占用这台设备");
+    expect(screen.queryByText(/可强制接管/)).not.toBeInTheDocument();
+
+    window.localStorage.removeItem("uurc.lastSignalSession");
+  });
+
   it("defers room join until the operator starts the connection from the control page", async () => {
     vi.stubGlobal("RTCPeerConnection", TestPeerConnection);
     appBackend.currentParticipants = [];

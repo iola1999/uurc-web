@@ -110,7 +110,11 @@ export class RemoteControlService {
     this.nextSignalEventId = 1;
 
     const startedAt = new Date().toISOString();
-    const rawHeaders = buildStreamerSignalHeaders({ token: roomConfig.token, gzipSdp: input.gzipSdp ?? true });
+    const rawHeaders = buildStreamerSignalHeaders({
+      token: roomConfig.token,
+      gzipSdp: input.gzipSdp ?? true,
+      streamerVersion: input.streamerVersion,
+    });
     this.signalStatus = createSignalGatewayStatus({
       status: "connecting",
       roomConfig,

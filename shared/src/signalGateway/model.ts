@@ -23,6 +23,7 @@ export interface RemoteSignalGatewayEvent {
 export interface RemoteSignalGatewayStartRequest {
   gzipSdp?: boolean;
   signalServerIndex?: number;
+  streamerVersion?: string;
   roomConfig?: StreamerRoomConfig;
   joinContext?: RemoteRoomJoinContext;
 }

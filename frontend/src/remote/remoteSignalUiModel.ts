@@ -1,10 +1,31 @@
 import type { RemoteSignalGatewayEvent, RemoteSignalGatewayStatus } from "@uurc/shared/signalGateway/model";
-import type { StreamerSignalControlResult } from "@uurc/shared/streamer/signalControl";
+import type { StreamerControlPeerNetworkInfo, StreamerSignalControlResult } from "@uurc/shared/streamer/signalControl";
 
 export function formatSignalGatewayErrorHint(status: RemoteSignalGatewayStatus | null): string {
   if (status?.status !== "error") return "";
   const detail = status.error?.trim() || "未知错误";
   return `连接失败：${detail}`;
+}
+
+export function formatControlRoutingDecision(result: StreamerSignalControlResult | null | undefined): string {
+  if (!result) return "-";
+  return [
+    `force_relay=${formatOptionalBoolean(result.forceRelay)}`,
+    `auto_switch=${formatOptionalBoolean(result.autoSwitchNetwork)}`,
+    `relay_ins_type=${result.relayInsType ?? "-"}`,
+  ].join(" · ");
+}
+
+export function formatPeerNetworkInfo(info: StreamerControlPeerNetworkInfo | undefined): string {
+  if (!info) return "-";
+  const region = [info.country, info.province, info.city].filter(Boolean).join(" ");
+  const isp = info.isp ? (info.relayIsp ? `${info.isp}(中转:${info.relayIsp})` : info.isp) : (info.relayIsp ?? "");
+  const parts = [region, isp].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "-";
+}
+
+function formatOptionalBoolean(value: boolean | undefined): string {
+  return value === undefined ? "-" : value ? "是" : "否";
 }
 
 export function summarizeSwitchNetworkNotify(events: readonly RemoteSignalGatewayEvent[]): string {
