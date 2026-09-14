@@ -70,7 +70,7 @@ describe("RemoteCommandBar dock", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows the full toolbar first, then collapses to the arrow and follows hover", () => {
+  it("shows the full toolbar for two seconds, then collapses to the arrow and follows hover", () => {
     useCollapseTimers();
     renderCommandBar();
     const dock = getDock();
@@ -78,16 +78,21 @@ describe("RemoteCommandBar dock", () => {
     expect(dock.querySelector(".control-command-bar")).toBeInTheDocument();
     expect(getTab()).toHaveAttribute("aria-expanded", "true");
 
-    settle(2500);
+    // 连接建立后完整展示两秒，到点收成箭头。
+    settle(1900);
+    expect(dock.querySelector(".control-command-bar")).toBeInTheDocument();
+    settle(200);
     expect(dock.querySelector(".control-command-bar")).not.toBeInTheDocument();
     expect(getTab()).toHaveAttribute("aria-expanded", "false");
 
     fireEvent.pointerOver(getTab());
     expect(dock.querySelector(".control-command-bar")).toBeInTheDocument();
 
+    // 鼠标移开同样等两秒再收起。
     fireEvent.pointerOut(getTab(), { relatedTarget: document.body });
+    settle(1900);
     expect(dock.querySelector(".control-command-bar")).toBeInTheDocument();
-    settle(2500);
+    settle(200);
     expect(dock.querySelector(".control-command-bar")).not.toBeInTheDocument();
   });
 
@@ -96,12 +101,12 @@ describe("RemoteCommandBar dock", () => {
     renderCommandBar();
     const dock = getDock();
 
-    settle(2500);
+    settle(2000);
     const tabWhileCollapsed = getTab();
     expect(dock.firstElementChild).toBe(tabWhileCollapsed);
 
     fireEvent.pointerOver(getTab());
-    // 展开只是在箭头下方追加工具条：箭头节点本身不被替换，光标底下的元素也就不会变成别的按钮。
+    // 展开只是在箭头下方追加工具条：箭头节点本身保持同一个，光标底下的元素也保持同一个。
     expect(getTab()).toBe(tabWhileCollapsed);
     expect(dock.firstElementChild).toBe(tabWhileCollapsed);
     expect(dock.children).toHaveLength(2);
@@ -112,7 +117,7 @@ describe("RemoteCommandBar dock", () => {
     renderCommandBar();
     const dock = getDock();
 
-    settle(2500);
+    settle(2000);
     fireEvent.pointerOver(getTab(), { pointerType: "touch" });
     expect(dock.querySelector(".control-command-bar")).not.toBeInTheDocument();
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FocusEvent, type PointerEvent } from "react";
 
-// 工具栏完整出现的时长：挂载后先展示这么久，鼠标一直不在上面就收成小箭头。
-const AUTO_COLLAPSE_DELAY_MS = 2500;
+// 工具栏完整出现的时长：连上后先展示这么久，之后鼠标每次移开也等这么久才收起。
+const AUTO_COLLAPSE_DELAY_MS = 2000;
 
 interface CollapsibleToolbarOptions {
   // 未连接、文字输入窗口或快捷键菜单打开时必须保持展开，否则会在操作途中收起。

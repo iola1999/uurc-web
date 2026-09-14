@@ -66,7 +66,7 @@ export function RemoteCommandBar({
   });
 
   return (
-    // 停靠点固定在画面顶部居中。箭头单独占一行且始终存在，展开时工具条在它下方长出，
+    // 停靠点固定在整个页面的顶部居中。箭头单独占一行且始终存在，展开时工具条在它下方长出，
     // 光标底下的元素在展开前后保持同一个。
     <section className="command-dock" aria-label="远控主流程" {...dockProps}>
       <button

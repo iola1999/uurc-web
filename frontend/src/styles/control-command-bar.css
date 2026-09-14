@@ -1,7 +1,7 @@
-/* 停靠点固定在画面顶部居中。箭头单独占一行且始终存在，展开时工具条在它下方长出，
-   光标底下的元素在展开前后保持同一个。 */
+/* 停靠点固定在整个页面的顶部居中（视口坐标，含顶栏那一段），窗口和全屏下位置一致。
+   箭头单独占一行且始终存在，展开时工具条在它下方长出，光标底下的元素在展开前后保持同一个。 */
 .command-dock {
-  position: absolute;
+  position: fixed;
   top: 6px;
   left: 50%;
   transform: translateX(-50%);
@@ -10,9 +10,9 @@
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  max-width: calc(100% - 16px);
+  max-width: calc(100vw - 16px);
   /* 容器宽度等于工具条宽度，箭头两侧那圈是透明的：整体放行指针事件，
-     只在箭头和工具条上接收，否则会挡住画面点击，鼠标划过画面顶部还会误触展开。 */
+     只在箭头和工具条上接收，否则会挡住顶栏和画面的点击，鼠标划过页面顶部还会误触展开。 */
   pointer-events: none;
 }
 
@@ -85,10 +85,10 @@
 }
 
 /* 顶部悬浮重连恢复条：画面保留最后一帧，恢复条居中浮在其上。
-   顶部停靠点占 6px~61px，未连接时工具条多一行操作说明会到约 79px，恢复条排在两者之下。 */
+   工具栏停在页面顶部（视口坐标），已经离开画布范围，恢复条回到画布自己的顶部。 */
 .reconnect-banner {
   position: absolute;
-  top: 88px;
+  top: 14px;
   left: 50%;
   translate: -50% 0;
   transform-origin: center top;
