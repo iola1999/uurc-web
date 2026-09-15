@@ -43,6 +43,11 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
+    // Chrome 扩展(MV3,纯 JS 无构建)
+    files: ["extension/**/*.js"],
+    languageOptions: { globals: { ...globals.browser, ...globals.webextensions } },
+  },
+  {
     // 测试放宽
     files: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {

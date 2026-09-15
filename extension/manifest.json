@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "UURC Direct Signal",
+  "version": "0.1.0",
+  "description": "Inject UU Remote signaling handshake headers so the browser can open the signaling WebSocket directly. / 为 UU 信令 WebSocket 握手注入认证 header,让浏览器直连信令。",
+  "permissions": ["declarativeNetRequest"],
+  "host_permissions": ["*://*.nrd.nie.163.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost/*", "http://127.0.0.1/*", "https://uurc.678234.xyz/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
