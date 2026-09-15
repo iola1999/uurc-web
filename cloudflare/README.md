@@ -25,7 +25,7 @@ Cloudflare sits on the application, UU API, and signaling paths. The browser est
 2. The Durable Object connects to the upstream Socket.IO signal service and exchanges control messages, SDP, and ICE candidates.
 3. The browser selects a LAN, P2P, or UU relay path from the ICE result.
 
-The default automatic mode allows LAN and P2P direct connectivity. It can fall back to UU relay when the network requires it. The advanced "Force UU relay" option selects a relay path explicitly. The Worker does not carry WebRTC media, and deploying it on Cloudflare does not disable direct connectivity.
+The default automatic mode allows LAN and P2P direct connectivity. It can fall back to UU relay when the network requires it. The advanced "Force UU relay" option selects a relay path explicitly. The Worker does not carry WebRTC media. Note that the UU server decides routing from the source IP of the signaling socket: the Durable Object egresses from Cloudflare datacenter addresses, and current UU policy forces relay for datacenter sources, so Cloudflare deployments alone no longer reach direct paths. Installing the companion [extension](../extension/README.md) lets the browser open the signaling socket itself; routing is then decided from the browser's own network and direct connectivity is preserved.
 
 ## Security
 

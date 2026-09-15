@@ -25,6 +25,7 @@ Cloudflare Worker + Durable Object 是较方便的自部署方式。Worker 负�
 - 远控画面、声音、输入与剪贴板同步
 - 多屏切换、连接诊断与自动重连
 - 客户端指纹预设与服务端路由决策调试信息
+- 配套 Chrome 扩展实现浏览器直连信令（机房出口的部署也能保留直连能力）
 - 伙伴远程协助与接管控制
 - 账号管理
 - Node 与 Cloudflare 两套 UU API / 信令网关
@@ -44,6 +45,21 @@ npm run deploy:cloudflare
 ```
 
 部署要求、信任边界和直连说明见 [Cloudflare 部署指南](cloudflare/README.zh-CN.md)。
+
+### 浏览器直连信令（扩展）
+
+Cloudflare 部署此前可以建立直连。UU 服务端后来收紧了路由策略：按信令 socket 的出口 IP 决定 `force_relay`，机房出口（Cloudflare Worker）一律强制走 UU 中转，住宅出口仍可直连。
+
+仓库 `extension/` 目录下的 Chrome 扩展可以恢复直连：信令 WebSocket 改由浏览器直接建立，信令出口变成浏览器所在网络。浏览器无法给 WebSocket 握手设置自定义 header，而 UU 信令认证只认握手 header，扩展通过 declarativeNetRequest 会话规则完成注入（只存内存、按标签页隔离、仅命中 UU 信令域名）。网页仍运行在你的部署上，信令和媒体都不经过任何自建主机。
+
+扩展是纯 JavaScript，无需构建。加载步骤：
+
+1. 打开 `chrome://extensions`；
+2. 开启右上角「开发者模式」；
+3. 点「加载已解压的扩展程序」，选择 `extension/` 目录；
+4. 部署在 localhost 之外时，把站点加进 `extension/manifest.json` 的 `content_scripts.matches`，然后重新加载扩展。
+
+网页会自动检测扩展。「信令通道」默认为**自动**：检测到扩展优先浏览器直连，扩展缺失或直连失败时回退部署侧网关；也可在 设置 → 高级设置 → 信令通道 手动选择。连接后在调试信息里确认：「信令路径」显示浏览器直连，「服务端路由」显示 `force_relay=否`。细节见 [extension/README.md](extension/README.md)。
 
 ### Docker
 

@@ -25,6 +25,7 @@ The public landing page is prerendered during the frontend build so its content 
 - Remote video, audio, input, and clipboard synchronization
 - Multi-display selection, connection diagnostics, and recovery
 - Client fingerprint presets and server routing-decision diagnostics
+- Browser-direct signaling through a companion Chrome extension (keeps direct connectivity on datacenter-egress deployments)
 - Partner assistance and takeover control
 - Account management
 - Node and Cloudflare gateways for UU API and signal traffic
@@ -44,6 +45,21 @@ npm run deploy:cloudflare
 ```
 
 See the [Cloudflare deployment guide](cloudflare/README.md) for requirements, trust boundaries, and direct-connection details.
+
+### Browser-direct signaling (extension)
+
+Cloudflare deployments used to reach direct (non-relay) connections. The UU server has since tightened its routing policy: it decides `force_relay` from the source IP of the signaling socket, and datacenter egress (Cloudflare Workers) is now always forced onto UU relay, while residential egress still gets direct paths.
+
+The Chrome extension under `extension/` restores direct connectivity: the browser opens the signaling WebSocket itself, so the signaling source becomes the browser's own network. Browsers cannot set custom headers on a WebSocket handshake, and UU signaling authentication only accepts handshake headers, so the extension injects them through declarativeNetRequest session rules (memory-only, tab-scoped, restricted to UU signaling hosts). The web app keeps running on your deployment; neither signaling nor media passes through a self-hosted machine.
+
+The extension is plain JavaScript — no build step. Loading:
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked** and select the `extension/` directory.
+4. For deployments other than localhost, add your site to `content_scripts.matches` in `extension/manifest.json`, then reload the extension.
+
+The web app detects the extension automatically. The signaling channel defaults to **Auto**: browser-direct when the extension is present, falling back to the deployment gateway when it is missing or fails. Manual selection lives in Settings → Advanced → Signaling channel. After connecting, confirm in Diagnostics that the signal path shows browser-direct and the server routing row shows `force_relay=no`. Details: [extension/README.md](extension/README.md).
 
 ### Docker
 
