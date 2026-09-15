@@ -1,64 +1,68 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { WorkerSignalSocket } from "../src/signal/workerSignalSocket.js";
+import type { AsyncSignalGatewayBinaryCodec } from "../src/signalGateway/payload.js";
+import { SignalSocketEngine, type SignalSocketTransport } from "../src/signalGateway/signalSocket.js";
 
-type SocketEventType = "message" | "close" | "error";
-
-class FakeWebSocket {
-  binaryType = "blob";
-  accepted = false;
+class FakeTransport implements SignalSocketTransport {
   readonly sent: Array<string | Uint8Array> = [];
   readonly closeCalls: Array<{ code?: number; reason?: string }> = [];
-  private readonly listeners = new Map<SocketEventType, Set<(event: never) => void>>();
+  listenersInstalled = false;
+  private messageListener: ((data: unknown) => void) | null = null;
+  private closeListener: ((info: { code: number; reason: string }) => void) | null = null;
+  private errorListener: (() => void) | null = null;
 
-  accept(): void {
-    this.accepted = true;
-  }
-
-  send(value: string | Uint8Array): void {
-    this.sent.push(value);
+  send(frame: string | Uint8Array): void {
+    this.sent.push(frame);
   }
 
   close(code?: number, reason?: string): void {
     this.closeCalls.push({ code, reason });
   }
 
-  addEventListener(type: SocketEventType, listener: (event: never) => void): void {
-    const listeners = this.listeners.get(type) ?? new Set();
-    listeners.add(listener);
-    this.listeners.set(type, listeners);
+  onMessage(listener: (data: unknown) => void): void {
+    this.messageListener = listener;
+    this.listenersInstalled = true;
+  }
+
+  onClose(listener: (info: { code: number; reason: string }) => void): void {
+    this.closeListener = listener;
+  }
+
+  onError(listener: () => void): void {
+    this.errorListener = listener;
   }
 
   dispatchMessage(data: unknown): void {
-    this.dispatch("message", { data });
+    this.messageListener?.(data);
   }
 
   dispatchClose(code = 1006, reason = "transport lost"): void {
-    this.dispatch("close", { code, reason });
+    this.closeListener?.({ code, reason });
   }
 
   dispatchError(): void {
-    this.dispatch("error", {});
-  }
-
-  private dispatch(type: SocketEventType, event: unknown): void {
-    for (const listener of this.listeners.get(type) ?? []) listener(event as never);
+    this.errorListener?.();
   }
 }
 
+const testCodec: AsyncSignalGatewayBinaryCodec<Uint8Array> = {
+  decodeBase64: (value) => Uint8Array.from(atob(value), (char) => char.charCodeAt(0)),
+  toBinary: (value) => (value instanceof Uint8Array ? value : null),
+  byteLength: (value) => value.byteLength,
+  encodeBase64: (value) => btoa(String.fromCharCode(...value)),
+  gzipText: async (value) => new TextEncoder().encode(value),
+  gunzipText: async () => null,
+};
+
 interface SocketHarness {
-  client: WorkerSignalSocket;
-  socket: FakeWebSocket;
+  engine: SignalSocketEngine;
+  transport: FakeTransport;
   events: Array<{ event: string; payload: unknown }>;
   onClose: ReturnType<typeof vi.fn<(reason: string) => void>>;
   onError: ReturnType<typeof vi.fn<(reason: string) => void>>;
 }
 
-describe("WorkerSignalSocket", () => {
-  beforeEach(() => {
-    vi.spyOn(console, "log").mockImplementation(() => {});
-  });
-
+describe("SignalSocketEngine", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -68,15 +72,15 @@ describe("WorkerSignalSocket", () => {
   it("closes a half-open connection after the advertised heartbeat deadline", async () => {
     const harness = await connectHarness();
     vi.useFakeTimers();
-    harness.socket.dispatchMessage('0{"sid":"engine-1","pingInterval":1000,"pingTimeout":1000}');
+    harness.transport.dispatchMessage('0{"sid":"engine-1","pingInterval":1000,"pingTimeout":1000}');
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(1500);
-    harness.socket.dispatchMessage("2");
+    harness.transport.dispatchMessage("2");
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(1500);
-    expect(harness.client.connected).toBe(true);
+    expect(harness.engine.connected).toBe(true);
     await vi.advanceTimersByTimeAsync(500);
-    expect(harness.client.connected).toBe(false);
+    expect(harness.engine.connected).toBe(false);
     expect(harness.onClose).toHaveBeenCalledWith("signal heartbeat timed out");
   });
 
@@ -84,9 +88,9 @@ describe("WorkerSignalSocket", () => {
     "rejects excessive attachments or oversized frames",
     async (frame) => {
       const harness = await connectHarness();
-      harness.socket.dispatchMessage(frame);
+      harness.transport.dispatchMessage(frame);
       await vi.waitFor(() => expect(harness.onError).toHaveBeenCalledOnce());
-      expect(harness.client.connected).toBe(false);
+      expect(harness.engine.connected).toBe(false);
     },
   );
 
@@ -96,12 +100,12 @@ describe("WorkerSignalSocket", () => {
   ])("treats a remote %s disconnect packet as a closed connection", async (_protocol, frame) => {
     const harness = await connectHarness();
 
-    harness.socket.dispatchMessage(frame);
+    harness.transport.dispatchMessage(frame);
 
     await vi.waitFor(() => expect(harness.onClose).toHaveBeenCalledOnce());
-    expect(harness.client.connected).toBe(false);
+    expect(harness.engine.connected).toBe(false);
     expect(harness.onError).not.toHaveBeenCalled();
-    expect(harness.socket.closeCalls).toHaveLength(1);
+    expect(harness.transport.closeCalls).toHaveLength(1);
   });
 
   it("preserves message order while an earlier binary frame is decoded asynchronously", async () => {
@@ -113,8 +117,8 @@ describe("WorkerSignalSocket", () => {
       }
     }
 
-    harness.socket.dispatchMessage(new DeferredBlob());
-    harness.socket.dispatchMessage('42["after_binary",{"sequence":2}]');
+    harness.transport.dispatchMessage(new DeferredBlob());
+    harness.transport.dispatchMessage('42["after_binary",{"sequence":2}]');
     await Promise.resolve();
     await Promise.resolve();
 
@@ -127,47 +131,47 @@ describe("WorkerSignalSocket", () => {
   it("reports an invalid frame, closes the socket and keeps the queue rejection handled", async () => {
     const harness = await connectHarness();
 
-    harness.socket.dispatchMessage("4invalid-socket-io-packet");
+    harness.transport.dispatchMessage("4invalid-socket-io-packet");
 
     await vi.waitFor(() => expect(harness.onError).toHaveBeenCalledOnce());
     expect(harness.onError).toHaveBeenCalledWith(expect.stringContaining("invalid socket.io packet type"));
-    expect(harness.client.connected).toBe(false);
-    expect(harness.socket.closeCalls).toHaveLength(1);
+    expect(harness.engine.connected).toBe(false);
+    expect(harness.transport.closeCalls).toHaveLength(1);
   });
 
   it("rejects pending acknowledgements immediately when closed", async () => {
     const harness = await connectHarness();
-    const pendingAck = harness.client.emitWithAck("control", { value: true }, 10_000);
+    const pendingAck = harness.engine.emitWithAck("control", { value: true }, 10_000);
 
-    harness.client.close();
+    harness.engine.close();
 
     await expect(pendingAck).rejects.toThrow("signal socket closed before control ack");
   });
 });
 
 async function connectHarness(): Promise<SocketHarness> {
-  const socket = new FakeWebSocket();
+  const transport = new FakeTransport();
   const events: SocketHarness["events"] = [];
   const onClose = vi.fn<(reason: string) => void>();
   const onError = vi.fn<(reason: string) => void>();
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async () => ({ status: 101, webSocket: socket })),
-  );
-  const client = new WorkerSignalSocket({
-    onEvent: (event) => events.push({ event: event.event, payload: event.payload }),
-    onClose,
-    onError,
+  const engine = new SignalSocketEngine({
+    callbacks: {
+      onEvent: (event) => events.push({ event: event.event, payload: event.payload }),
+      onClose,
+      onError,
+    },
+    codec: testCodec,
+    openTransport: async () => transport,
   });
 
-  const connecting = client.connect("wss://signal.example", {}, 1_000);
-  await vi.waitFor(() => expect(socket.accepted).toBe(true));
-  socket.dispatchMessage('0{"sid":"engine-1"}');
-  await vi.waitFor(() => expect(socket.sent).toContain("40"));
-  socket.dispatchMessage('40{"sid":"socket-1"}');
+  const connecting = engine.connect("wss://signal.example", {}, 1_000);
+  await vi.waitFor(() => expect(transport.listenersInstalled).toBe(true));
+  transport.dispatchMessage('0{"sid":"engine-1"}');
+  await vi.waitFor(() => expect(transport.sent).toContain("40"));
+  transport.dispatchMessage('40{"sid":"socket-1"}');
   await connecting;
 
-  return { client, socket, events, onClose, onError };
+  return { engine, transport, events, onClose, onError };
 }
 
 function deferred<T>(): { promise: Promise<T>; resolve(value: T): void } {

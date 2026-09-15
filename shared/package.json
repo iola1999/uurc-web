@@ -80,6 +80,14 @@
       "types": "./dist/signalGateway/requests.d.ts",
       "default": "./dist/signalGateway/requests.js"
     },
+    "./signalGateway/signalSocket": {
+      "types": "./dist/signalGateway/signalSocket.d.ts",
+      "default": "./dist/signalGateway/signalSocket.js"
+    },
+    "./signalGateway/socketIoWire": {
+      "types": "./dist/signalGateway/socketIoWire.d.ts",
+      "default": "./dist/signalGateway/socketIoWire.js"
+    },
     "./signalGateway/status": {
       "types": "./dist/signalGateway/status.d.ts",
       "default": "./dist/signalGateway/status.js"

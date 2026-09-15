@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildBrowserEngineIoWebSocketUrl,
   buildEngineIoWebSocketUrl,
   deconstructBinary,
   encodeSocketIoPacket,
@@ -8,7 +9,7 @@ import {
   prefixEngineIoBinaryFrame,
   reconstructBinaryPlaceholders,
   stripEngineIoBinaryFramePrefix,
-} from "../src/signal/socketIoWire.js";
+} from "../src/signalGateway/socketIoWire.js";
 
 describe("Socket.IO wire codec", () => {
   it("builds an Engine.IO websocket endpoint while preserving existing query parameters", () => {
@@ -18,6 +19,16 @@ describe("Socket.IO wire codec", () => {
     expect(buildEngineIoWebSocketUrl("https://signal.example/custom")).toBe(
       "https://signal.example/custom/?EIO=4&transport=websocket",
     );
+  });
+
+  it("builds a browser Engine.IO websocket endpoint that keeps the wss scheme", () => {
+    expect(buildBrowserEngineIoWebSocketUrl("wss://signal.example?token=one")).toBe(
+      "wss://signal.example/socket.io/?token=one&EIO=4&transport=websocket",
+    );
+    expect(buildBrowserEngineIoWebSocketUrl("https://signal.example/custom")).toBe(
+      "wss://signal.example/custom/?EIO=4&transport=websocket",
+    );
+    expect(() => buildBrowserEngineIoWebSocketUrl("wss://127.0.0.1")).toThrow();
   });
 
   it("round-trips namespace, binary attachment count and ack id", () => {

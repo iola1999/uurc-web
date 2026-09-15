@@ -1,4 +1,4 @@
-import { validateSignalServer } from "@uurc/shared/signalGateway/authorization";
+import { validateSignalServer } from "./authorization.js";
 
 export const SOCKET_IO_NAMESPACE = "/";
 export const ENGINE_IO_OPEN = "0";
@@ -17,14 +17,26 @@ export interface SocketIoPacket {
   data?: unknown;
 }
 
+// Workers 侧用 fetch-upgrade 建连,需要 https: 形式的 Engine.IO 端点
 export function buildEngineIoWebSocketUrl(signalServer: string): string {
   const url = validateSignalServer(signalServer);
   if (url.protocol === "wss:") url.protocol = "https:";
+  return withEngineIoQuery(url).toString();
+}
+
+// 浏览器侧 new WebSocket 建连,保留 wss:(握手 header 由配套扩展带外注入)
+export function buildBrowserEngineIoWebSocketUrl(signalServer: string): string {
+  const url = validateSignalServer(signalServer);
+  if (url.protocol === "https:") url.protocol = "wss:";
+  return withEngineIoQuery(url).toString();
+}
+
+function withEngineIoQuery(url: URL): URL {
   if (!url.pathname || url.pathname === "/") url.pathname = "/socket.io/";
   else if (!url.pathname.endsWith("/")) url.pathname = `${url.pathname}/`;
   url.searchParams.set("EIO", "4");
   url.searchParams.set("transport", "websocket");
-  return url.toString();
+  return url;
 }
 
 export function parseEngineOpenPacket(value: string): { sid?: string; pingInterval: number; pingTimeout: number } {
