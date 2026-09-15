@@ -4,7 +4,12 @@ import { useEffect, useId, useState } from "react";
 import type { UuDevice, UuParticipantInfo } from "@uurc/shared/devices";
 import type { FingerprintClientType, FingerprintConfig, FingerprintPresetId } from "@uurc/shared/fingerprint";
 
-import type { BusyAction, ConnectionRouteMode, SdpTransportMode } from "../app/remoteControlTypes.js";
+import type {
+  BusyAction,
+  ConnectionRouteMode,
+  SdpTransportMode,
+  SignalChannelMode,
+} from "../app/remoteControlTypes.js";
 import { ParticipantList } from "./ParticipantList.js";
 import { AnimatedDisclosure } from "./ui/AnimatedDisclosure.js";
 import { SegmentedControl } from "./ui/SegmentedControl.js";
@@ -15,6 +20,7 @@ export interface RemoteControlSettingsDrawerProps {
   browserRtcReady: boolean;
   busy: BusyAction;
   connectionRouteMode: ConnectionRouteMode;
+  directSignalExtensionHint: string;
   fingerprint: FingerprintConfig;
   forceJoin: boolean;
   onAutoConnectChange: (enabled: boolean) => void;
@@ -22,6 +28,7 @@ export interface RemoteControlSettingsDrawerProps {
   onFingerprintPatch: (patch: Partial<FingerprintConfig>) => void;
   onFingerprintPreset: (preset: FingerprintPresetId) => void;
   onForceJoinChange: (forceJoin: boolean) => void;
+  onSignalChannelModeChange: (mode: SignalChannelMode) => void;
   onSignalServerIndexChange: (index: number) => void;
   onSdpTransportModeChange: (mode: SdpTransportMode) => void;
   onStartBrowserRemote: () => void;
@@ -30,6 +37,7 @@ export interface RemoteControlSettingsDrawerProps {
   sdpTransportMode: SdpTransportMode;
   selectedDevice: UuDevice | null;
   selectedParticipants: UuParticipantInfo[];
+  signalChannelMode: SignalChannelMode;
   signalServerIndex: number;
   signalServerOptions: string[];
 }
@@ -39,6 +47,7 @@ export function RemoteControlSettingsDrawer({
   browserRtcReady,
   busy,
   connectionRouteMode,
+  directSignalExtensionHint,
   fingerprint,
   forceJoin,
   onAutoConnectChange,
@@ -46,6 +55,7 @@ export function RemoteControlSettingsDrawer({
   onFingerprintPatch,
   onFingerprintPreset,
   onForceJoinChange,
+  onSignalChannelModeChange,
   onSignalServerIndexChange,
   onSdpTransportModeChange,
   onStartBrowserRemote,
@@ -54,6 +64,7 @@ export function RemoteControlSettingsDrawer({
   sdpTransportMode,
   selectedDevice,
   selectedParticipants,
+  signalChannelMode,
   signalServerIndex,
   signalServerOptions,
 }: RemoteControlSettingsDrawerProps) {
@@ -143,6 +154,21 @@ export function RemoteControlSettingsDrawer({
               { value: "relay", label: "强制 UU 中转" },
             ]}
           />
+        </div>
+        <div className="control-field">
+          <span className="control-field-label">信令通道</span>
+          <SegmentedControl
+            name="signalChannelMode"
+            ariaLabel="信令通道"
+            value={signalChannelMode}
+            onChange={onSignalChannelModeChange}
+            options={[
+              { value: "auto", label: "自动" },
+              { value: "gateway", label: "部署侧网关" },
+              { value: "direct", label: "浏览器直连" },
+            ]}
+          />
+          <p className="field-hint">{directSignalExtensionHint}</p>
         </div>
         <div className="control-field">
           <span className="control-field-label">客户端指纹</span>

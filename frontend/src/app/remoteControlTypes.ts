@@ -24,6 +24,8 @@ export type BusyAction =
 
 export type SdpTransportMode = "gzip" | "plain";
 export type ConnectionRouteMode = "auto" | "relay";
+// 信令通道:浏览器直连(经扩展注入握手 header)或部署侧网关转发;auto 优先直连、失败回退网关
+export type SignalChannelMode = "auto" | "gateway" | "direct";
 export type RemoteStageViewMode = "fit" | "fill";
 export type RemoteAudioPlaybackState = "idle" | "waiting" | "playing" | "blocked" | "error";
 

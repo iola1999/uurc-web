@@ -66,9 +66,11 @@ export interface RemoteSignalSoacResult {
   emittedAt: string;
 }
 
+export type RemoteSignalGatewayStrategy = "backend_signal_gateway" | "browser_direct_signal";
+
 export interface RemoteSignalGatewayStatus {
   status: RemoteSignalGatewayState;
-  strategy: "backend_signal_gateway";
+  strategy: RemoteSignalGatewayStrategy;
   selectedSignalServer?: string;
   signalServers: string[];
   signalHeaders: Record<string, string>;

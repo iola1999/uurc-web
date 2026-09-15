@@ -79,6 +79,11 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
         .map(([key, value]) => `${key}=${value}`)
         .join(", ")
     : "-";
+  const signalPathLabel = input.signalGatewayStatus
+    ? input.signalGatewayStatus.strategy === "browser_direct_signal"
+      ? "浏览器直连（扩展）"
+      : "部署侧网关"
+    : "-";
   const roomJoinFailureMessage = getRoomJoinFailureMessage(input.roomResponse);
   const selectedDeviceIsCurrentAuthDevice = Boolean(
     input.authDeviceId && input.selectedDeviceId && input.selectedDeviceId === input.authDeviceId,
@@ -300,6 +305,7 @@ export function createRemoteControlPresentation(input: RemoteControlPresentation
     signalGatewayMatchesRoom,
     signalGatewayState,
     signalHeaderSummary,
+    signalPathLabel,
     signalReadiness,
     signalServerOptions: input.remoteBootstrap?.signalServers ?? [],
     stageStatusLabel,

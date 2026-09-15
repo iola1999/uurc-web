@@ -34,10 +34,13 @@ export function orderSignalGatewayServers(signalServers: string[], preferredInde
   ];
 }
 
-export function createIdleSignalGatewayStatus(updatedAt = new Date().toISOString()): RemoteSignalGatewayStatus {
+export function createIdleSignalGatewayStatus(
+  updatedAt = new Date().toISOString(),
+  strategy: RemoteSignalGatewayStatus["strategy"] = "backend_signal_gateway",
+): RemoteSignalGatewayStatus {
   return {
     status: "idle",
-    strategy: "backend_signal_gateway",
+    strategy,
     signalServers: [],
     signalHeaders: {},
     signalControl: buildSignalGatewayControlStatus(),
@@ -53,6 +56,7 @@ export function createSignalGatewayStatus({
   connectionId,
   error,
   selectedSignalServer,
+  strategy = "backend_signal_gateway",
   updatedAt = new Date().toISOString(),
 }: {
   status: RemoteSignalGatewayStatus["status"];
@@ -62,11 +66,12 @@ export function createSignalGatewayStatus({
   connectionId?: string;
   error?: string;
   selectedSignalServer?: string;
+  strategy?: RemoteSignalGatewayStatus["strategy"];
   updatedAt?: string;
 }): RemoteSignalGatewayStatus {
   return {
     status,
-    strategy: "backend_signal_gateway",
+    strategy,
     selectedSignalServer: selectedSignalServer ?? roomConfig.signalServers[0],
     signalServers: roomConfig.signalServers,
     signalHeaders: redactSignalGatewayHeaders(rawHeaders),

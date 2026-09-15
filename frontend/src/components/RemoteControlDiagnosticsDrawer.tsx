@@ -45,6 +45,7 @@ export interface RemoteControlDiagnosticsDrawerProps {
   signalEvents: RemoteSignalGatewayEvent[];
   signalGatewayDisplay: string;
   signalHeaderSummary: string;
+  signalPathLabel: string;
   signalReadiness: RemoteSignalReadinessDiagnostics;
   sdpTransportLabel: string;
   subscriberNetworkLabel: string;
@@ -88,6 +89,7 @@ export function RemoteControlDiagnosticsDrawer({
   signalEvents,
   signalGatewayDisplay,
   signalHeaderSummary,
+  signalPathLabel,
   signalReadiness,
   sdpTransportLabel,
   subscriberNetworkLabel,
@@ -107,6 +109,7 @@ export function RemoteControlDiagnosticsDrawer({
         <StatusRow label="入会方式" value={roomJoinModeDebugLabel} />
         <StatusRow label="连接服务" value={signalGatewayDisplay} />
         <StatusRow label="信令状态" value={signalGatewayDisplay} />
+        <StatusRow label="信令路径" value={signalPathLabel} />
         <StatusRow label="浏览器控制" value={browserRtcDescription} />
         <StatusRow label="实际路径" value={connectionPathLabel} />
         <StatusRow label="候选链路" value={candidatePairSummary} />

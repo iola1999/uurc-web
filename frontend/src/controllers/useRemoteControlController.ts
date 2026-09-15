@@ -8,7 +8,11 @@ import type { RuntimeProfile } from "@uurc/shared/runtimeProfile";
 
 import type { RemoteControlContext } from "../app/remoteControlTypes.js";
 import { SELF_DEVICE_BLOCKED_REASON } from "../app/remoteControlTypes.js";
-import { getRemoteSignalDiagnostics, startRemoteSignalGateway } from "../api/remoteSignalApi.js";
+import {
+  getRemoteSignalDiagnostics,
+  setSignalChannelPreference,
+  startRemoteSignalGateway,
+} from "../api/remoteSignalApi.js";
 import { getRuntimeProfile } from "../api/runtimeApi.js";
 import { getDeviceGroups } from "../uu/roomApi.js";
 import { getLastSignalSessionClientId, rememberLastSignalSession } from "../uu/lastSignalSessionStore.js";
@@ -59,6 +63,9 @@ export function useRemoteControlController(context: RemoteControlContext) {
     setSdpTransportMode,
     connectionRouteMode,
     setConnectionRouteMode,
+    signalChannelMode,
+    setSignalChannelMode,
+    directSignalExtensionInfo,
     autoConnect,
     setAutoConnect,
     remoteStageViewMode,
@@ -67,6 +74,15 @@ export function useRemoteControlController(context: RemoteControlContext) {
     setSignalServerIndex,
     browserWebRtcUnavailableReason,
   } = useRemoteControlPreferences(remoteBootstrap?.signalServers.length ?? 0);
+  // 信令路径偏好同步给 remoteSignalApi 分发层:强制 UU 中转依赖服务端 force_relay,固定走网关
+  useEffect(() => {
+    setSignalChannelPreference({ channelMode: signalChannelMode, routeMode: connectionRouteMode });
+  }, [signalChannelMode, connectionRouteMode]);
+  const directSignalExtensionHint = directSignalExtensionInfo
+    ? directSignalExtensionInfo.available
+      ? `已检测到 Direct Signal 扩展${directSignalExtensionInfo.version ? ` v${directSignalExtensionInfo.version}` : ""}`
+      : directSignalExtensionInfo.reason
+    : "正在检测 Direct Signal 扩展…";
   const { fingerprint, applyFingerprintPatch, selectFingerprintPreset } = useFingerprintPreferences();
   const {
     signalGatewayContext,
@@ -559,6 +575,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     signalGatewayMatchesRoom,
     signalGatewayState,
     signalHeaderSummary,
+    signalPathLabel,
     signalReadiness,
     signalServerOptions,
     stageStatusLabel,
@@ -715,6 +732,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
       browserRtcReady,
       busy,
       connectionRouteMode,
+      directSignalExtensionHint,
       fingerprint,
       forceJoin,
       onAutoConnectChange: setAutoConnect,
@@ -722,6 +740,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
       onFingerprintPatch: applyFingerprintPatch,
       onFingerprintPreset: selectFingerprintPreset,
       onForceJoinChange: setForceJoin,
+      onSignalChannelModeChange: setSignalChannelMode,
       onSignalServerIndexChange: setSignalServerIndex,
       onSdpTransportModeChange: setSdpTransportMode,
       onStartBrowserRemote: () => void handleStartBrowserRemote(),
@@ -730,6 +749,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
       sdpTransportMode,
       selectedDevice,
       selectedParticipants,
+      signalChannelMode,
       signalServerIndex,
       signalServerOptions,
     },
@@ -767,6 +787,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
       signalEvents,
       signalGatewayDisplay,
       signalHeaderSummary,
+      signalPathLabel,
       signalReadiness,
       sdpTransportLabel,
       subscriberNetworkLabel,

@@ -168,6 +168,6 @@ export function createRemoteControlBootstrap({
     joinContext: joinContext ?? undefined,
     roomConfigSummary,
     gatewayRequiredReason:
-      "Upstream signal connect requires custom socket.io headers; the browser cannot set those headers on a WebSocket handshake.",
+      "Upstream signal connect requires custom socket.io headers on the WebSocket handshake. Browsers can only set them through the companion Direct Signal extension (extension/); without it, signaling goes through this gateway.",
   };
 }
