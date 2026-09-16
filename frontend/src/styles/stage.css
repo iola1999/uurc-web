@@ -40,6 +40,50 @@
   min-height: 0;
   overflow: hidden;
   background: #050505;
+  --remote-video-rotate: 0deg;
+  --remote-video-flip-x: 1;
+  --remote-video-flip-y: 1;
+}
+
+/*
+ * 画面方向矫正只旋转/翻转视频图层本身，不动指针坐标和远端光标。
+ * 旋转的是铺满舞台的容器而不是 <video>，这样 object-fit 仍在「已旋转的坐标系」里做 contain/cover，
+ * 旋转 90°/270° 时画面会自动缩放到合适大小，无需 JS 参与，窗口缩放和全屏也能自适应。
+ */
+.remote-video-tile[data-rotation]:not([data-rotation="0"]),
+.remote-video-tile[data-flip]:not([data-flip="none"]) {
+  transform: scaleX(var(--remote-video-flip-x)) scaleY(var(--remote-video-flip-y)) rotate(var(--remote-video-rotate));
+}
+
+.remote-video-tile[data-rotation="90"] {
+  --remote-video-rotate: 90deg;
+}
+
+.remote-video-tile[data-rotation="180"] {
+  --remote-video-rotate: 180deg;
+}
+
+.remote-video-tile[data-rotation="270"] {
+  --remote-video-rotate: 270deg;
+}
+
+.remote-video-tile[data-flip="horizontal"] {
+  --remote-video-flip-x: -1;
+}
+
+.remote-video-tile[data-flip="vertical"] {
+  --remote-video-flip-y: -1;
+}
+
+/* 旋转 90°/270° 时容器也会跟着转，去掉底色，让舞台背景透出来而不是画出一个斜方块。 */
+.remote-video-tile[data-rotation="90"],
+.remote-video-tile[data-rotation="270"] {
+  background: transparent;
+}
+
+.remote-video-tile[data-rotation="90"] .remote-video,
+.remote-video-tile[data-rotation="270"] .remote-video {
+  background: transparent;
 }
 
 .remote-video-tile-hidden {

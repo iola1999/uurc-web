@@ -1,18 +1,21 @@
 import { useEffect, useRef } from "react";
 
 import type { BrowserRemoteVideoElementSample } from "../remote/browserRemoteSessionTypes.js";
+import type { RemoteVideoOrientation } from "../remote/remoteVideoOrientation.js";
 
 export function RemoteVideoTile({
   videoId,
   index,
   stream,
   visible,
+  orientation,
   onVideoSample,
 }: {
   videoId: string;
   index: number;
   stream: MediaStream;
   visible: boolean;
+  orientation: RemoteVideoOrientation;
   onVideoSample: (videoId: string, sample: BrowserRemoteVideoElementSample) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -74,6 +77,9 @@ export function RemoteVideoTile({
     <div
       className={visible ? "remote-video-tile" : "remote-video-tile remote-video-tile-hidden"}
       aria-hidden={visible ? undefined : true}
+      // 只影响画面图层：指针坐标和远端光标仍按未矫正的画面计算。
+      data-rotation={String(orientation.rotation)}
+      data-flip={orientation.flip}
     >
       <video
         ref={videoRef}

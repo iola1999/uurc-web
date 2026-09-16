@@ -11,6 +11,7 @@ import {
   type RemoteControlDiagnosticsDrawerProps,
 } from "./RemoteControlDiagnosticsDrawer.js";
 import { RemoteControlSettingsDrawer, type RemoteControlSettingsDrawerProps } from "./RemoteControlSettingsDrawer.js";
+import { RemoteVideoOrientationPanel, type RemoteVideoOrientationPanelProps } from "./RemoteVideoOrientationPanel.js";
 import { RemoteVideoSourcePanel, type RemoteVideoSourcePanelProps } from "./RemoteVideoSourcePanel.js";
 import { Tabs } from "./ui/Tabs.js";
 
@@ -40,6 +41,7 @@ interface RemoteControlSidePanelProps {
   };
   settings: RemoteControlSettingsDrawerProps;
   diagnostics: RemoteControlDiagnosticsDrawerProps;
+  orientation: RemoteVideoOrientationPanelProps;
 }
 
 export function RemoteControlSidePanel({
@@ -48,6 +50,7 @@ export function RemoteControlSidePanel({
   insights,
   settings,
   diagnostics,
+  orientation,
 }: RemoteControlSidePanelProps) {
   return (
     <m.aside
@@ -88,6 +91,7 @@ export function RemoteControlSidePanel({
             label: "设置",
             content: (
               <div className="control-side-panel-body">
+                <RemoteVideoOrientationPanel {...orientation} />
                 <RemoteControlSettingsDrawer {...settings} />
                 <RemoteControlDiagnosticsDrawer {...diagnostics} />
               </div>

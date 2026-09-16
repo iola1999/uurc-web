@@ -15,18 +15,24 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   options,
+  columns = 2,
 }: {
   name: string;
   ariaLabel: string;
   value: T;
   onChange: (value: T) => void;
   options: SegmentedControlOption<T>[];
+  columns?: number;
 }) {
   const controlId = useId();
 
   return (
     <LayoutGroup id={controlId}>
-      <fieldset className="segmented-control" aria-label={ariaLabel}>
+      <fieldset
+        className="segmented-control"
+        aria-label={ariaLabel}
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      >
         {options.map((option) => {
           const selected = value === option.value;
 
