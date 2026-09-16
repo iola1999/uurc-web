@@ -33,6 +33,7 @@ import { useRemoteControlPreferences } from "./useRemoteControlPreferences.js";
 import { useRemoteClipboardController } from "./useRemoteClipboardController.js";
 import { useRemoteInputController } from "./useRemoteInputController.js";
 import { useRemoteRecoveryController } from "./useRemoteRecoveryController.js";
+import { useRemoteVideoOrientation } from "./useRemoteVideoOrientation.js";
 import { useRoomController } from "./useRoomController.js";
 import { useSignalGatewayController } from "./useSignalGatewayController.js";
 import { useToastController } from "./useToastController.js";
@@ -160,6 +161,9 @@ export function useRemoteControlController(context: RemoteControlContext) {
     [devices.desktopDevices, devices.mobileDevices, devices.tvDevices],
   );
   const selectedDeviceId = routeSelectedDeviceId;
+  // 画面方向矫正按设备记忆：换设备时读取对应被控端的设置，不会把上一台的旋转带过去。
+  const { orientation: remoteVideoOrientation, setOrientation: setRemoteVideoOrientation } =
+    useRemoteVideoOrientation(selectedDeviceId);
 
   // 换设备就是重新开始一次连接流程，上一台设备上手动断开的终止指令不再适用。
   useEffect(() => {
@@ -684,6 +688,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
       remoteStageRef,
       remoteStageViewMode,
       remoteVideoCount,
+      remoteVideoOrientation,
       remoteVideoStreams,
       selectedDevice,
       stageStatusLabel,
@@ -752,6 +757,10 @@ export function useRemoteControlController(context: RemoteControlContext) {
       signalChannelMode,
       signalServerIndex,
       signalServerOptions,
+    },
+    orientation: {
+      orientation: remoteVideoOrientation,
+      onOrientationChange: setRemoteVideoOrientation,
     },
     diagnostics: {
       audioPlaybackLabel,

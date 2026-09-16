@@ -13,6 +13,7 @@ import { RemoteControlTopbar, type RemoteControlTopbarProps } from "./RemoteCont
 import { RemoteControlWarnings, type RemoteControlWarningsProps } from "./RemoteControlWarnings.js";
 import { RemoteOccupiedDialog } from "./RemoteOccupiedDialog.js";
 import { RemoteReconnectBanner, type RemoteReconnectBannerProps } from "./RemoteReconnectBanner.js";
+import type { RemoteVideoOrientationPanelProps } from "./RemoteVideoOrientationPanel.js";
 import type { RemoteVideoSourcePanelProps } from "./RemoteVideoSourcePanel.js";
 
 export interface RemoteControlPageProps {
@@ -35,6 +36,7 @@ export interface RemoteControlPageProps {
   };
   settings: RemoteControlSettingsDrawerProps;
   diagnostics: RemoteControlDiagnosticsDrawerProps;
+  orientation: RemoteVideoOrientationPanelProps;
 }
 
 export function RemoteControlPage(props: RemoteControlPageProps) {
@@ -125,6 +127,7 @@ export function RemoteControlPage(props: RemoteControlPageProps) {
               insights={props.insights}
               settings={props.settings}
               diagnostics={props.diagnostics}
+              orientation={props.orientation}
             />
           ) : null}
         </AnimatePresence>

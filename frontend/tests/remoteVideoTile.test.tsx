@@ -40,6 +40,7 @@ describe("RemoteVideoTile", () => {
           index={0}
           stream={{} as MediaStream}
           visible
+          orientation={{ rotation: 0, flip: "none" }}
           onVideoSample={onVideoSample}
         />,
       );
@@ -81,5 +82,22 @@ describe("RemoteVideoTile", () => {
         delete (HTMLVideoElement.prototype as Partial<HTMLVideoElement>).cancelVideoFrameCallback;
       }
     }
+  });
+
+  it("exposes the display-only orientation attributes on the video tile", () => {
+    const view = render(
+      <RemoteVideoTile
+        videoId="video-track-1"
+        index={0}
+        stream={{} as MediaStream}
+        visible
+        orientation={{ rotation: 90, flip: "vertical" }}
+        onVideoSample={vi.fn()}
+      />,
+    );
+    const tile = view.container.querySelector(".remote-video-tile");
+    // 方向矫正只落在画面图层的 data 属性上，输入坐标和远端光标仍按未矫正的画面计算。
+    expect(tile).toHaveAttribute("data-rotation", "90");
+    expect(tile).toHaveAttribute("data-flip", "vertical");
   });
 });

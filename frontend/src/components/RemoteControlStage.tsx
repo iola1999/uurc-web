@@ -23,6 +23,7 @@ import type {
   BrowserRemoteSessionState,
   BrowserRemoteVideoElementSample,
 } from "../remote/browserRemoteSessionTypes.js";
+import type { RemoteVideoOrientation } from "../remote/remoteVideoOrientation.js";
 import { getConnectingStageSteps } from "../remote/remoteSessionUiModel.js";
 import { RemoteVideoTile } from "./RemoteVideoTile.js";
 
@@ -47,6 +48,7 @@ export interface RemoteControlStageProps {
   remoteStageRef: RefObject<HTMLDivElement | null>;
   remoteStageViewMode: RemoteStageViewMode;
   remoteVideoCount: number;
+  remoteVideoOrientation: RemoteVideoOrientation;
   remoteVideoStreams: RemoteVideoStream[];
   selectedDevice: UuDevice | null;
   stageStatusLabel: string;
@@ -74,6 +76,7 @@ export function RemoteControlStage({
   remoteStageRef,
   remoteStageViewMode,
   remoteVideoCount,
+  remoteVideoOrientation,
   remoteVideoStreams,
   selectedDevice,
   stageStatusLabel,
@@ -111,6 +114,7 @@ export function RemoteControlStage({
                 index={index}
                 visible={video.id === primaryRemoteVideoId}
                 stream={video.stream}
+                orientation={remoteVideoOrientation}
                 onVideoSample={onRemoteVideoSample}
               />
             ))}

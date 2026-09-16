@@ -24,6 +24,7 @@ The public landing page is prerendered during the frontend build so its content 
 - Device list
 - Remote video, audio, input, and clipboard synchronization
 - Multi-display selection, connection diagnostics, and recovery
+- Picture rotation and flip correction (display-only; pointer coordinates are unchanged)
 - Client fingerprint presets and server routing-decision diagnostics
 - Browser-direct signaling through a companion Chrome extension (keeps direct connectivity on datacenter-egress deployments)
 - Partner assistance and takeover control
