@@ -77,7 +77,7 @@ export function RemoteVideoTile({
     <div
       className={visible ? "remote-video-tile" : "remote-video-tile remote-video-tile-hidden"}
       aria-hidden={visible ? undefined : true}
-      // 只影响画面图层：指针坐标和远端光标仍按未矫正的画面计算。
+      // 解析后的方向：自动摆正的角度和手动选的角度都已经合并进来。
       data-rotation={String(orientation.rotation)}
       data-flip={orientation.flip}
     >

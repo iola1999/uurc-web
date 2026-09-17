@@ -61,6 +61,10 @@ import type {
   BrowserRemoteVideoFlowDelta,
 } from "./browserRemoteSessionTypes.js";
 import { applyOpusReceiverPreferencesToSdp } from "./remoteSdp.js";
+import {
+  parseRemoteVideoOrientationExtensionId,
+  type RemoteVideoOrientationNegotiation,
+} from "./remoteVideoOrientation.js";
 
 export class BrowserRemoteSession {
   private static readonly maxDebugEvents = 120;
@@ -157,6 +161,12 @@ export class BrowserRemoteSession {
 
   private streamerTimestampSeconds(): number {
     return Math.floor(this.now() / 1000);
+  }
+
+  // 远端 answer 里画面方向扩展的协商结果。诊断用：区分「远端没协商方向扩展」和「协商了但没上报角度」。
+  getRemoteVideoOrientationNegotiation(): RemoteVideoOrientationNegotiation {
+    const sdp = this.peer?.remoteDescription?.sdp;
+    return { known: sdp !== undefined, extensionId: parseRemoteVideoOrientationExtensionId(sdp) };
   }
 
   getState(): BrowserRemoteSessionState {

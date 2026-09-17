@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BrowserRemoteSession } from "../src/remote/browserRemoteSession.js";
 import { useRemoteInputController } from "../src/controllers/useRemoteInputController.js";
+import type { RemoteVideoRotation } from "../src/remote/remoteVideoOrientation.js";
 
 const clipboardMocks = vi.hoisted(() => ({
   accessIssue: vi.fn<() => string | null>(),
@@ -566,6 +567,46 @@ describe("useRemoteInputController", () => {
     expect(releaseOrphanModifiers).toHaveBeenCalledOnce();
   });
 
+  // 画面摆正之后，屏幕上的位置就是被控端桌面上的位置，指针坐标不按旋转角度做换算。
+  // 只有 90°/270° 会换掉画面在屏幕上的长宽，内容框跟着换，坐标仍然是在内容框里直接归一化。
+  it("sends the point under the cursor whatever the picture is turned by", async () => {
+    const moves: unknown[] = [];
+    const session = {
+      sendMouseMove: vi.fn((input) => moves.push(input)),
+      sendMouseButton: vi.fn(),
+      releaseAllInputs: vi.fn(),
+      releaseOrphanModifiers: vi.fn(),
+    } as unknown as BrowserRemoteSession;
+    let controller: ReturnType<typeof useRemoteInputController> | undefined;
+    const onController = (nextController: ReturnType<typeof useRemoteInputController>) => {
+      controller = nextController;
+    };
+
+    const view = render(<Harness session={session} videoRotation={180} onController={onController} />);
+    await waitFor(() => expect(controller?.inputControlActive).toBe(true));
+    const stage = view.getByTestId("stage") as HTMLDivElement;
+    stage.getBoundingClientRect = () => new DOMRect(0, 0, 1000, 500);
+    const video = stage.querySelector("video")!;
+    Object.defineProperty(video, "videoWidth", { value: 1000, configurable: true });
+    Object.defineProperty(video, "videoHeight", { value: 500, configurable: true });
+    flushFrames();
+
+    act(() => controller?.handleRemoteStagePointerMove(pointerEvent(stage, 100, 50)));
+    flushFrames();
+    expect(moves.at(-1)).toEqual({ absX: 100, absY: 50, surfaceWidth: 1000, surfaceHeight: 500 });
+
+    // 转 90° 后画面在屏幕上是 250x500 的一竖条，居中摆放：点它的左上角就是被控端桌面的原点。
+    view.rerender(<Harness session={session} videoRotation={90} onController={onController} />);
+    flushFrames();
+    act(() => controller?.handleRemoteStagePointerMove(pointerEvent(stage, 375, 0)));
+    flushFrames();
+    expect(moves.at(-1)).toEqual({ absX: 0, absY: 0, surfaceWidth: 500, surfaceHeight: 1000 });
+
+    act(() => controller?.handleRemoteStagePointerMove(pointerEvent(stage, 500, 250)));
+    flushFrames();
+    expect(moves.at(-1)).toEqual({ absX: 250, absY: 500, surfaceWidth: 500, surfaceHeight: 1000 });
+  });
+
   function flushFrames(): void {
     const callbacks = [...frameCallbacks.values()];
     frameCallbacks.clear();
@@ -582,6 +623,7 @@ function Harness({
   onSessionStateChange = () => undefined,
   targetPlatform = 1,
   controlChannelState = "open",
+  videoRotation = 0,
 }: {
   session: BrowserRemoteSession;
   onError?: (message: string) => void;
@@ -589,6 +631,7 @@ function Harness({
   onSessionStateChange?: (state: ReturnType<BrowserRemoteSession["getState"]>) => void;
   targetPlatform?: number;
   controlChannelState?: RTCDataChannelState;
+  videoRotation?: RemoteVideoRotation;
 }) {
   const browserSessionRef = { current: session };
   const controller = useRemoteInputController({
@@ -597,6 +640,7 @@ function Harness({
     targetPlatform,
     primaryRemoteVideoId: "video-1",
     remoteStageViewMode: "fit",
+    videoRotation,
     onError,
     onSessionStateChange,
   });

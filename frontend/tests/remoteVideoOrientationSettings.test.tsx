@@ -13,13 +13,13 @@ describe("remote video orientation settings", () => {
     window.localStorage.clear();
   });
 
-  it("offers the picture correction in the settings tab and persists it per device", async () => {
+  it("offers the picture orientation in the settings tab and persists the chosen angle per device", async () => {
     const user = userEvent.setup();
     render(<App />);
     await openOfficeMacControl(user);
     await openSettingsTab(user);
 
-    expect(screen.getByRole("radio", { name: "0°" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "跟随" })).toBeChecked();
     await user.click(screen.getByRole("radio", { name: "180°" }));
     await user.click(screen.getByRole("radio", { name: "左右" }));
 
@@ -29,7 +29,7 @@ describe("remote video orientation settings", () => {
     });
   });
 
-  it("restores the stored correction for the selected device", async () => {
+  it("restores the stored angle for the selected device", async () => {
     window.localStorage.setItem(
       REMOTE_VIDEO_ORIENTATION_STORAGE_KEY,
       JSON.stringify({ "desktop-1": { rotation: 270, flip: "vertical" } }),

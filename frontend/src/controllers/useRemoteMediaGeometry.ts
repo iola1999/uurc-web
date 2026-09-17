@@ -2,13 +2,15 @@ import { useCallback, useLayoutEffect, useRef, type RefObject } from "react";
 
 import type { RemoteStageViewMode } from "../app/remoteControlTypes.js";
 import { computeRemoteMediaGeometry, type RemoteMediaGeometry } from "../remote/remoteMediaGeometry.js";
+import type { RemoteVideoRotation } from "../remote/remoteVideoOrientation.js";
 
 export function useRemoteMediaGeometry(options: {
   stageRef: RefObject<HTMLDivElement | null>;
   viewMode: RemoteStageViewMode;
   primaryVideoId: string;
+  rotation: RemoteVideoRotation;
 }) {
-  const { stageRef, viewMode, primaryVideoId } = options;
+  const { stageRef, viewMode, primaryVideoId, rotation } = options;
   const geometryRef = useRef<RemoteMediaGeometry | undefined>(undefined);
   const geometryChangeListenersRef = useRef(new Set<() => void>());
 
@@ -32,8 +34,12 @@ export function useRemoteMediaGeometry(options: {
 
     const stageRect = stage.getBoundingClientRect();
     const video = stage.querySelector<HTMLVideoElement>('video[data-active="true"]') ?? stage.querySelector("video");
-    const mediaWidth = video?.videoWidth || Math.round(stageRect.width);
-    const mediaHeight = video?.videoHeight || Math.round(stageRect.height);
+    const elementWidth = video?.videoWidth || Math.round(stageRect.width);
+    const elementHeight = video?.videoHeight || Math.round(stageRect.height);
+    // 旋转 90°/270° 之后画面在屏幕上的长宽是对调的，几何按对调后的尺寸算才等于屏幕上真实的内容框。
+    const quarterTurn = rotation === 90 || rotation === 270;
+    const mediaWidth = quarterTurn ? elementHeight : elementWidth;
+    const mediaHeight = quarterTurn ? elementWidth : elementHeight;
     const geometry = computeRemoteMediaGeometry({
       containerRect: {
         left: stageRect.left,
@@ -48,7 +54,7 @@ export function useRemoteMediaGeometry(options: {
     geometryRef.current = geometry;
     notifyGeometryChange();
     return geometry;
-  }, [notifyGeometryChange, stageRef, viewMode]);
+  }, [notifyGeometryChange, rotation, stageRef, viewMode]);
 
   useLayoutEffect(() => {
     const stage = stageRef.current;

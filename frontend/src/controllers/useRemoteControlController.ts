@@ -22,6 +22,10 @@ import { createRemoteControlPresentation } from "../remote/remoteControlPresenta
 import { isDesktopPlatform } from "../remote/browserRemote/utils.js";
 import { remoteShortcutGroupTitleForPlatform } from "../remote/remoteShortcuts.js";
 import { formatSignalGatewayErrorHint } from "../remote/remoteSignalUiModel.js";
+import {
+  formatRemoteVideoOrientationDiagnostics,
+  resolveRemoteVideoOrientation,
+} from "../remote/remoteVideoOrientation.js";
 import { useBrowserRemoteSessionController } from "./useBrowserRemoteSessionController.js";
 import { useFingerprintPreferences } from "./useFingerprintPreferences.js";
 import { useRemoteAudioController } from "./useRemoteAudioController.js";
@@ -34,6 +38,7 @@ import { useRemoteClipboardController } from "./useRemoteClipboardController.js"
 import { useRemoteInputController } from "./useRemoteInputController.js";
 import { useRemoteRecoveryController } from "./useRemoteRecoveryController.js";
 import { useRemoteVideoOrientation } from "./useRemoteVideoOrientation.js";
+import { useRemoteVideoRotationProbe } from "./useRemoteVideoRotationProbe.js";
 import { useRoomController } from "./useRoomController.js";
 import { useSignalGatewayController } from "./useSignalGatewayController.js";
 import { useToastController } from "./useToastController.js";
@@ -162,8 +167,37 @@ export function useRemoteControlController(context: RemoteControlContext) {
   );
   const selectedDeviceId = routeSelectedDeviceId;
   // 画面方向矫正按设备记忆：换设备时读取对应被控端的设置，不会把上一台的旋转带过去。
-  const { orientation: remoteVideoOrientation, setOrientation: setRemoteVideoOrientation } =
+  const { setting: remoteVideoOrientationSetting, setSetting: setRemoteVideoOrientationSetting } =
     useRemoteVideoOrientation(selectedDeviceId);
+  const primaryRemoteVideoTrack = useMemo(() => {
+    const video = remoteVideoStreams.find((item) => item.id === primaryRemoteVideoId) ?? remoteVideoStreams[0];
+    return video?.stream.getVideoTracks()[0];
+  }, [primaryRemoteVideoId, remoteVideoStreams]);
+  const { reportedRotation: remoteReportedVideoRotation, available: rotationProbeAvailable } =
+    useRemoteVideoRotationProbe(primaryRemoteVideoTrack);
+  const remoteVideoRotationSignals = useMemo(
+    () => ({
+      reportedRotation: remoteReportedVideoRotation,
+      elementSize: browserRemoteState.videoElement,
+      decodedSize: {
+        width: browserRemoteState.inboundVideo?.frameWidth,
+        height: browserRemoteState.inboundVideo?.frameHeight,
+      },
+    }),
+    [browserRemoteState.inboundVideo, browserRemoteState.videoElement, remoteReportedVideoRotation],
+  );
+  // 实际作用在画面图层和输入几何上的方向。
+  const remoteVideoOrientation = useMemo(
+    () => resolveRemoteVideoOrientation(remoteVideoOrientationSetting, remoteVideoRotationSignals),
+    [remoteVideoOrientationSetting, remoteVideoRotationSignals],
+  );
+  const videoOrientationLabel = formatRemoteVideoOrientationDiagnostics({
+    setting: remoteVideoOrientationSetting,
+    resolved: remoteVideoOrientation,
+    signals: remoteVideoRotationSignals,
+    probeAvailable: rotationProbeAvailable,
+    extension: browserRemoteSession.current?.getRemoteVideoOrientationNegotiation() ?? { known: false },
+  });
 
   // 换设备就是重新开始一次连接流程，上一台设备上手动断开的终止指令不再适用。
   useEffect(() => {
@@ -277,6 +311,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
     targetPlatform: resolveTargetPlatform(),
     primaryRemoteVideoId,
     remoteStageViewMode,
+    videoRotation: remoteVideoOrientation.rotation,
     onError: setError,
     onSessionStateChange: setBrowserRemoteState,
   });
@@ -759,8 +794,8 @@ export function useRemoteControlController(context: RemoteControlContext) {
       signalServerOptions,
     },
     orientation: {
-      orientation: remoteVideoOrientation,
-      onOrientationChange: setRemoteVideoOrientation,
+      setting: remoteVideoOrientationSetting,
+      onSettingChange: setRemoteVideoOrientationSetting,
     },
     diagnostics: {
       audioPlaybackLabel,
@@ -804,6 +839,7 @@ export function useRemoteControlController(context: RemoteControlContext) {
       unexpectedSignalEventSummary,
       videoElementLabel,
       videoFlowLabel,
+      videoOrientationLabel,
     },
   };
 
