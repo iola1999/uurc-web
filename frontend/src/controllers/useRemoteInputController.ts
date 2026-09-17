@@ -19,6 +19,7 @@ import type { BrowserRemoteSessionState } from "../remote/browserRemoteSessionTy
 import { sendRemoteShortcut, type RemoteShortcut } from "../remote/remoteShortcuts.js";
 import { toRemoteKeyValue, toRemoteMouseButton } from "../remote/remoteInputModel.js";
 import { clientPointToRemoteMedia } from "../remote/remoteMediaGeometry.js";
+import type { RemoteVideoRotation } from "../remote/remoteVideoOrientation.js";
 import { isDesktopRemoteScrollTarget, RemoteScrollDeltaAccumulator } from "../remote/remoteScrollInput.js";
 import { useRemoteCursorController } from "./useRemoteCursorController.js";
 import { useRemoteMediaGeometry } from "./useRemoteMediaGeometry.js";
@@ -54,6 +55,7 @@ interface UseRemoteInputControllerOptions {
   targetPlatform?: number;
   primaryRemoteVideoId: string;
   remoteStageViewMode: RemoteStageViewMode;
+  videoRotation: RemoteVideoRotation;
   onError(message: string): void;
   onSessionStateChange(state: BrowserRemoteSessionState): void;
 }
@@ -64,6 +66,7 @@ export function useRemoteInputController({
   targetPlatform,
   primaryRemoteVideoId,
   remoteStageViewMode,
+  videoRotation,
   onError,
   onSessionStateChange,
 }: UseRemoteInputControllerOptions) {
@@ -113,6 +116,7 @@ export function useRemoteInputController({
     stageRef: remoteStageRef,
     viewMode: remoteStageViewMode,
     primaryVideoId: primaryRemoteVideoId,
+    rotation: videoRotation,
   });
   const { handleRemoteCursorShape, resetRemoteCursor } = useRemoteCursorController({
     stageRef: remoteStageRef,

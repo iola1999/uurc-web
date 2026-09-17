@@ -31,6 +31,8 @@
   inset: 0;
   overflow: hidden;
   background: var(--stage);
+  /* 旋转 90°/270° 的图层要按舞台尺寸对调长宽，用容器查询单位取，见下面的 .remote-video-tile 规则。 */
+  container-type: size;
 }
 
 .remote-video-tile {
@@ -46,13 +48,26 @@
 }
 
 /*
- * 画面方向矫正只旋转/翻转视频图层本身，不动指针坐标和远端光标。
- * 旋转的是铺满舞台的容器而不是 <video>，这样 object-fit 仍在「已旋转的坐标系」里做 contain/cover，
- * 旋转 90°/270° 时画面会自动缩放到合适大小，无需 JS 参与，窗口缩放和全屏也能自适应。
+ * 方向矫正旋转/翻转的是铺满舞台的图层而不是 <video>，这样 object-fit 仍在「已旋转的坐标系」里做
+ * contain/cover，窗口缩放和全屏都不需要 JS 参与。
  */
 .remote-video-tile[data-rotation]:not([data-rotation="0"]),
 .remote-video-tile[data-flip]:not([data-flip="none"]) {
   transform: scaleX(var(--remote-video-flip-x)) scaleY(var(--remote-video-flip-y)) rotate(var(--remote-video-rotate));
+}
+
+/*
+ * 旋转 90°/270° 时图层的长宽要和舞台对调，转过去才正好铺满，不会被裁掉两角也不会白留一圈。
+ * 对调之后屏幕上的内容框等于「按对调后的尺寸做 contain/cover」的结果，输入几何用同一组尺寸算。
+ */
+.remote-video-tile:not(.remote-video-tile-hidden)[data-rotation="90"],
+.remote-video-tile:not(.remote-video-tile-hidden)[data-rotation="270"] {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  width: 100cqh;
+  height: 100cqw;
+  translate: -50% -50%;
 }
 
 .remote-video-tile[data-rotation="90"] {

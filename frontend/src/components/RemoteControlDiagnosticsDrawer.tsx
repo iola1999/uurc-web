@@ -53,6 +53,7 @@ export interface RemoteControlDiagnosticsDrawerProps {
   unexpectedSignalEventSummary: string;
   videoElementLabel: string;
   videoFlowLabel: string;
+  videoOrientationLabel: string;
 }
 
 export function RemoteControlDiagnosticsDrawer({
@@ -97,6 +98,7 @@ export function RemoteControlDiagnosticsDrawer({
   unexpectedSignalEventSummary,
   videoElementLabel,
   videoFlowLabel,
+  videoOrientationLabel,
 }: RemoteControlDiagnosticsDrawerProps) {
   return (
     <AnimatedDisclosure className="control-drawer" contentClassName="control-drawer-content" summary="调试信息">
@@ -129,6 +131,7 @@ export function RemoteControlDiagnosticsDrawer({
         <StatusRow label="视频状态" value={videoFlowLabel} />
         <StatusRow label="视频接收" value={inboundVideoStatsLabel} />
         <StatusRow label="视频采样" value={videoElementLabel} />
+        <StatusRow label="画面方向" value={videoOrientationLabel} />
         <StatusRow label="音频接收" value={inboundAudioStatsLabel} />
         <StatusRow label="音频播放" value={audioPlaybackLabel} />
         <StatusRow label="控制通道" value={controlChannelLabel} />
