@@ -11,6 +11,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # 卡住时按时失败，不要占着 runner 等默认的 6 小时。正常一轮 9 分钟左右。
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,12 +25,18 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck -w frontend
       - run: npm run typecheck:cloudflare
-      - run: npm test
+      # 分 workspace 跑，等价于根目录的 npm test：失败时从步骤名就能看出是哪一套，
+      # 不用翻完整份日志。
+      - run: npm run test -w shared
+      - run: npm run test -w backend
+      - run: npm run test -w frontend
+      - run: npm run test:cloudflare
       - run: npm run build
       - run: npm run check:cloudflare
 
   docker:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     needs: test
     steps:
       - uses: actions/checkout@v4
